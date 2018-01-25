@@ -29,7 +29,7 @@ $(document).ready(function () {
         };
 
         ws.onmessage = function(event) {
-            appendOutput('stdout', event.data);
+            appendOutput('stdout', event.data + '\n');
         };
 
         return false;
