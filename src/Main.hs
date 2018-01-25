@@ -21,10 +21,9 @@ type ServerState = Map B.ByteString WS.Connection
 
 app :: STM.TVar ServerState -> Snap ()
 app serverState = Snap.route
-  [ ("", Snap.ifTop $ Snap.serveFile "console.html")
-  , ("console.js", Snap.serveFile "console.js")
-  , ("chat/:username", chat serverState)
-  , ("style.css", Snap.serveFile "style.css")
+  [ ("chat/:username", chat serverState)
+  , ("", Snap.ifTop $ Snap.serveFile "public/console.html")
+  , ("", Snap.serveDirectory "public")
   ]
 
 
@@ -40,17 +39,24 @@ chatApp serverState username pending = do
   conn <- WS.acceptRequest pending
   STM.atomically $ STM.modifyTVar' serverState (Map.insert username conn)
     
-  let removeClient = do
+  let sendToEveryoneElse str = do
+        connectedClients <- STM.readTVarIO serverState
+        forM_ (Map.delete username connectedClients) $ \client ->
+          WS.sendTextData client str
+
+      removeClient = do
         BC.putStrLn $ username <> " has disconnected"
+        sendToEveryoneElse $ username <> " has disconnected"
         STM.atomically $ STM.modifyTVar' serverState (Map.delete username)
+
+
+  sendToEveryoneElse $ username <> " has connected"
 
   flip finally removeClient $ forever $ do
     message <- WS.receiveData conn
     let textToSend = username <> ": " <> message
     BC.putStrLn textToSend
-    connectedClients <- STM.readTVarIO serverState
-    forM_ (Map.delete username connectedClients) $ \client ->
-      WS.sendTextData client textToSend
+    sendToEveryoneElse textToSend
 
 
 main :: IO ()

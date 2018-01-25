@@ -14,22 +14,22 @@ $(document).ready(function () {
         $('#console').css('display', 'block');
 
         ws = new WebSocket("ws://localhost:8000/chat/" + username);
-        appendOutput('stderr', 'Opening WebSockets connection...\n');
+        appendOutput('status', 'Opening WebSockets connection...\n');
 
         ws.onerror = function(event) {
-            appendOutput('stderr', 'WebSockets error: ' + event.data + '\n');
+            appendOutput('status', 'WebSockets error: ' + event.data + '\n');
         };
 
         ws.onopen = function() {
-            appendOutput('stderr', 'WebSockets connection successful!\n');
+            appendOutput('status', 'WebSockets connection successful!\n');
         };
 
         ws.onclose = function() {
-            appendOutput('stderr', 'WebSockets connection closed.\n');
+            appendOutput('status', 'WebSockets connection closed.\n');
         };
 
         ws.onmessage = function(event) {
-            appendOutput('stdout', event.data + '\n');
+            appendOutput('otherMessage', event.data + '\n');
         };
 
         return false;
@@ -38,7 +38,7 @@ $(document).ready(function () {
     $('#console-input').submit(function () {
         var line = $('#line').val();
         ws.send(line);
-        appendOutput('stdin', line + '\n');
+        appendOutput('myMessage', line + '\n');
         $('#line').val('');
         return false;
     });
