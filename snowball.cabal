@@ -10,25 +10,19 @@ Category:            Web
 Build-type:          Simple
 Cabal-version:       >=1.2
 
-Executable snapTest
+Executable snowball
   hs-source-dirs: src
   main-is: Main.hs
-  other-modules: Chat
 
-  Build-depends:
-                aeson,
-                base                      >= 4     && < 5,
-                bytestring                >= 0.9.1 && < 0.11,
-                engine-io,
-                engine-io-snap,
-                monad-control             >= 1.0   && < 1.1,
-                mtl                       >= 2     && < 3,
-                snap-core                 >= 1.0   && < 1.1,
-                snap-server               >= 1.0   && < 1.1,
-                socket-io,
-                stm,
-                text,
-                transformers
+  Build-depends: base             >= 4        && < 5
+               , bytestring       >= 0.10     && < 0.11
+               , containers
+               , process          >= 1.2      && < 1.7
+               , snap-core        >= 1.0      && < 1.1
+               , snap-server      >= 1.0      && < 1.1
+               , stm
+               , websockets       >= 0.9.5    && < 0.13
+               , websockets-snap >= 0.10.0.0 && < 0.11
 
   if impl(ghc >= 6.12.0)
     ghc-options: -threaded -Wall -fwarn-tabs -funbox-strict-fields -O2
