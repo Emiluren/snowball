@@ -6,6 +6,9 @@ function appendOutput(cls, text) {
 var game;
 var map;
 var layer;
+var cursors;
+
+var mainPlayer;
 
 $(document).ready(function () {
     var ws;
@@ -77,13 +80,23 @@ function preload() {
     game.load.tilemap('tiles', 'assets/maptiles.json', null, Phaser.Tilemap.TILED_JSON);
 }
 
+function onClick() {
+    var x = game.input.activePointer.x;
+    var y = game.input.activePointer.y;
+    mouseClicked(x, y);
+}
+
 function create() {
-    game.stage.backgroundColor = '#909090';
-    map = game.add.tilemap('tiles');
-    map.addTilesetImage('mapLayer', 'snowblock');
-    layer = map.createLayer('map');
-    layer.resizeWorld();
+    // game.stage.backgroundColor = '#909090';
+    // map = game.add.tilemap('tiles');
+    // map.addTilesetImage('mapLayer', 'snowblock');
+    // layer = map.createLayer('map');
+    // layer.resizeWorld();
+    mainPlayer = game.add.sprite(400, 300, 'snowblock');
+    cursors = game.input.keyboard.createCursorKeys();
+    game.input.onDown.add(onClick, this);
 }
 
 function update() {
+    levelUpdate();
 }
