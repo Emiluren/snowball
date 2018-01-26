@@ -3,6 +3,8 @@ function appendOutput(cls, text) {
     $('#line').focus();
 }
 
+var game;
+
 $(document).ready(function () {
     var ws;
 
@@ -13,7 +15,8 @@ $(document).ready(function () {
             appendOutput('otherMessage', messageContent + '\n');
         },
         "start game": function(messageContent) {
-            //var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+            var callbacks = { preload: preload, create: create, update: update };
+            game = new Phaser.Game(800, 600, Phaser.AUTO, 'game-container', callbacks);
         }
     }
 

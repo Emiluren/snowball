@@ -99,12 +99,17 @@ chatApp serverStateVar lobbyName username pending = do
   let messageDispatcher = Map.fromList
         [ ( "chat"
           , \messageContent -> do
-              BC.putStrLn $ "(" <> lobbyName <> ") " <> username <> ": " <> messageContent
+              BC.putStrLn $
+                "(" <> lobbyName <> ") " <> username <> ": " <> messageContent
               sendToEveryoneElse $ "chat:" <> username <> ": " <> messageContent
           )
         , ( "start game"
           , \_ -> do
-              BC.putStrLn $ "(" <> lobbyName <> ") " <> username <> " clicked on start game!"
+              BC.putStrLn $
+                "(" <> lobbyName <> ") " <> username <> " clicked on start game!"
+              lobby <- (! lobbyName) <$> STM.readTVarIO serverStateVar
+              forM_ (_lobbyClients lobby) $ \client ->
+                WS.sendTextData (_clientConnection client) ("start game" :: B.ByteString)
           )
         ]
 
