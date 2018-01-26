@@ -8,6 +8,15 @@ $(document).ready(function () {
 
     $('#username').focus();
 
+    var messageHandler = {
+        "chat": function(messageContent) {
+            appendOutput('otherMessage', messageContent + '\n');
+        },
+        "start game": function(messageContent) {
+            //var game = new Phaser.Game(800, 600, Phaser.AUTO, '', { preload: preload, create: create, update: update });
+        }
+    }
+
     $('#login').submit(function () {
         var lobby = $('#lobby').val();
         var username = $('#username').val();
@@ -30,17 +39,39 @@ $(document).ready(function () {
         };
 
         ws.onmessage = function(event) {
-            appendOutput('otherMessage', event.data + '\n');
+            var splitMessage = event.data.split(/:(.+)/);
+            var messageType = splitMessage[0];
+            var messageContent = splitMessage[1];
+
+            if (messageType in messageHandler) {
+                messageHandler[messageType](messageHandler);
+            } else {
+                console.log("Received unknown message type: " + event.data);
+            }
         };
 
         return false;
     });
 
-    $('#console-input').submit(function () {
+    $('#console-input').submit(function() {
         var line = $('#line').val();
-        ws.send(line);
+        ws.send("chat:" + line);
         appendOutput('myMessage', line + '\n');
         $('#line').val('');
         return false;
     });
+
+    $('#game-starter').submit(function() {
+        ws.send("start game");
+        return false;
+    });
 });
+
+function preload() {
+}
+
+function create() {
+}
+
+function update() {
+}
