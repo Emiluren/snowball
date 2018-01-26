@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="40" height="30" tilewidth="20" tileheight="20" nextobjectid="1">
+ <tileset firstgid="1" name="snowball" tilewidth="20" tileheight="20" tilecount="1">
+  <tile id="0">
+   <image width="20" height="20" source="snowblock.png"/>
+  </tile>
+ </tileset>
+ <layer name="mapLayer" width="40" height="30">
+  <data encoding="base64" compression="zlib">
+   eJzt1tEKwCAIhWF7/5fuNkRNy6CL/4Mhm0VnxWAiAIDVUNXqRWPXZ8MYo/unKvmi+bt6mst6v2j/MvvVnW/Xy5yvJO+78lnre/mi6q1Ryff6fG++DwAAANTof7bfrgmd8QB1
+  </data>
+ </layer>
+</map>
