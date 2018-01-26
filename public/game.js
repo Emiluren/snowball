@@ -4,6 +4,8 @@ function appendOutput(cls, text) {
 }
 
 var game;
+var map;
+var layer;
 
 $(document).ready(function () {
     var ws;
@@ -47,7 +49,7 @@ $(document).ready(function () {
             var messageContent = splitMessage[1];
 
             if (messageType in messageHandler) {
-                messageHandler[messageType](messageHandler);
+                messageHandler[messageType](messageContent);
             } else {
                 console.log("Received unknown message type: " + event.data);
             }
@@ -71,9 +73,16 @@ $(document).ready(function () {
 });
 
 function preload() {
+    game.load.image('snowblock', 'assets/snowblock.png');
+    game.load.tilemap('tiles', 'assets/maptiles.json', null, Phaser.Tilemap.TILED_JSON);
 }
 
 function create() {
+    game.stage.backgroundColor = '#909090';
+    map = game.add.tilemap('tiles');
+    map.addTilesetImage('mapLayer', 'snowblock');
+    layer = map.createLayer('map');
+    layer.resizeWorld();
 }
 
 function update() {
