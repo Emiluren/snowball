@@ -18,7 +18,9 @@ Executable snowball
                , bytestring       >= 0.10     && < 0.11
                , containers
                , lens
+               , linear
                , process          >= 1.2      && < 1.7
+               , queue
                , snap-core        >= 1.0      && < 1.1
                , snap-server      >= 1.0      && < 1.1
                , stm
