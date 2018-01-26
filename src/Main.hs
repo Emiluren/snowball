@@ -53,12 +53,13 @@ chatApp serverStateVar lobbyName username pending = do
     serverState <- STM.readTVar serverStateVar
     let alreadyExisted = Map.member lobbyName serverState
     unless alreadyExisted $ do
-      STM.modifyTVar' serverStateVar $ Map.insert lobbyName $ LobbyState Map.empty
+      STM.modifyTVar' serverStateVar $
+        Map.insert lobbyName $ LobbyState Map.empty
     return alreadyExisted
 
   unless alreadyExisted $ BC.putStrLn $ "Creating new lobby " <> lobbyName
 
-  BC.putStrLn $ username <> " has connected to " <> lobbyName
+  BC.putStrLn $ "(" <> lobbyName <> ") " <> username <> " has connected"
   conn <- WS.acceptRequest pending
 
   let addClientToLobby =
@@ -67,12 +68,12 @@ chatApp serverStateVar lobbyName username pending = do
       -- Remove the whole lobby if all clients leave
       lobbyWithClientRemoved lobby =
         let
-          newLobby = lobbyClients %~ Map.delete username $ lobby
+          updatedLobby = lobbyClients %~ Map.delete username $ lobby
         in
-          if Map.null (_lobbyClients newLobby) then
+          if Map.null (_lobbyClients updatedLobby) then
              Nothing
           else
-            Just newLobby
+            Just updatedLobby
 
       deleteClientFromLobby =
         Map.update lobbyWithClientRemoved lobbyName
@@ -85,7 +86,7 @@ chatApp serverStateVar lobbyName username pending = do
           WS.sendTextData (_clientConnection client) str
 
       removeClient = do
-        BC.putStrLn $ username <> " has disconnected"
+        BC.putStrLn $ "(" <> lobbyName <> ") " <> username <> " has disconnected"
         sendToEveryoneElse $ username <> " has disconnected"
         STM.atomically $ STM.modifyTVar' serverStateVar deleteClientFromLobby
 
