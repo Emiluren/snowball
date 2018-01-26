@@ -5,7 +5,7 @@
          "data":"eJzt1tEKwCAIhWF7\/5fuNkRNy6CL\/4Mhm0VnxWAiAIDVUNXqRWPXZ8MYo\/unKvmi+bt6mst6v2j\/MvvVnW\/Xy5yvJO+78lnre\/mi6q1Ryff6fG++DwAAANTof7bfrgmd8QB1",
          "encoding":"base64",
          "height":30,
-         "name":"Tile Layer 1",
+         "name":"mapLayer",
          "opacity":1,
          "type":"tilelayer",
          "visible":true,
