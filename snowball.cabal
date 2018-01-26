@@ -17,6 +17,7 @@ Executable snowball
   Build-depends: base             >= 4        && < 5
                , bytestring       >= 0.10     && < 0.11
                , containers
+               , lens
                , process          >= 1.2      && < 1.7
                , snap-core        >= 1.0      && < 1.1
                , snap-server      >= 1.0      && < 1.1

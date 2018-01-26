@@ -9,11 +9,12 @@ $(document).ready(function () {
     $('#username').focus();
 
     $('#login').submit(function () {
+        var lobby = $('#lobby').val();
         var username = $('#username').val();
         $('#login').css('display', 'none');
         $('#console').css('display', 'block');
 
-        ws = new WebSocket("ws://localhost:8000/chat/" + username);
+        ws = new WebSocket("ws://localhost:8000/chat/" + lobby + '/' + username);
         appendOutput('status', 'Opening WebSockets connection...\n');
 
         ws.onerror = function(event) {
