@@ -29,8 +29,16 @@ def init_level():
     height = main_layer['height']
     
     global tiles
-    tiles = [[data[i*width + j] != 0 
-              for j in range(width)] for i in range(height)]
+    tiles = []
+    for i in range(height):
+        row = []
+        for j in range(width):
+            val = data[i*width + j] != 0
+            row += [val]*TILE_SIZE;
+        tiles += [row]*TILE_SIZE;
+            
+    # tiles = [[data[i*width + j] != 0 
+    #           for j in range(width*TILE_SIZE)] for i in range(height*TILE_SIZE)]
 
 
 def overlaps(a1, a2, b1, b2):
@@ -47,8 +55,8 @@ def can_move_to(width, height, new_x, new_y, players={}):
     (int, int, int, int) -> (Player|None, bool)
     """
     covered_tiles = map(lambda row: 
-                        row[round(new_x/TILE_SIZE):round((new_x+width)/TILE_SIZE)],
-                        tiles[round(new_y/TILE_SIZE):round((new_y+height)/TILE_SIZE)])
+                        row[new_x:new_x+width],
+                        tiles[new_y:new_y+height])
     
     for row in covered_tiles:
         if any(row):
