@@ -105,6 +105,9 @@ function preload() {
     game.load.image('snowman', 'assets/snowman.png');
     game.load.image('arrow', 'assets/arrow.png');
     game.load.image('powerbar', 'assets/powerbar.png');
+    game.load.image('snowball', 'assets/snowball.png');
+    
+    game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
 }
 
 function create() {

@@ -1,6 +1,7 @@
 
 const AIM_POWER_SPEED = 0.1;
-const SNOWBALL_COLLECT_TIME = 2000;
+const SNOWBALL_COLLECT_TIME = 500;
+const MAX_SNOWBALLS = 5;
 
 var time;
 var snowballCollectionStartTime;
@@ -33,6 +34,9 @@ var aimCounter;
 var aimSprite;
 var powerBar;
 
+var snowball;
+var snowballs = [];
+
 function initLevel() {
     aiming = false;
     currentForce = 0;
@@ -41,6 +45,8 @@ function initLevel() {
     formingSnowball = false;
     snowballCollectionStartTime = 0;
     snowballCollectionPercentage = 0;
+    initSnowballs();
+    initText();
 
     time = new Date().getTime();
     game.stage.backgroundColor = '#909090';
@@ -59,7 +65,7 @@ function initLevel() {
         'snowman'
     );
     
-    powerBar = game.add.sprite(10, 110, 'powerbar');
+    powerBar = game.add.sprite(5, 20, 'powerbar');
 
     for (var i in playerNames) {
         var name = playerNames[i];
@@ -93,7 +99,7 @@ function updatePlayerPosition(name, x, y) {
 }
 
 function updatePowerBar() {
-    powerBar.scale.y = -currentForce * 100;
+    powerBar.scale.x = currentForce * 100;
     powerBar.tint = rgb2hex(255*currentForce, 50*(1 - currentForce) + 205, 0);
 }
 
@@ -114,6 +120,28 @@ function getCurrentTime() {
     return (new Date()).getTime();
 }
 
+function initSnowballs() {
+    for (var i = MAX_SNOWBALLS; i > 0; i--) {
+        snowball = game.add.sprite(game.width - 15 * i - 40, 20, 'snowball');
+        snowball.visible = false;
+        snowballs.push(snowball);
+    }
+}
+
+function displaySnowballs() {
+    snowballs[numSnowballs-1].visible = true;
+}
+
+function decrementSnowballs() {
+    snowballs[numSnowballs-1].visible = false;
+    numSnowballs--;
+}
+
+function initText() {
+    game.add.bitmapText(game.width - 130, 5, 'carrier_command', 'Snowballs', 10);
+    game.add.bitmapText(5, 5, 'carrier_command', 'Power', 10);
+}
+
 function handleSnowballForming() {
     if (isFormSnowballPressed()) {
         // start timer
@@ -126,13 +154,14 @@ function handleSnowballForming() {
         var timeDiff = 
             getCurrentTime() - snowballCollectionStartTime;
 
-        if (timeDiff >= SNOWBALL_COLLECT_TIME) {
+        if (timeDiff >= SNOWBALL_COLLECT_TIME && numSnowballs < MAX_SNOWBALLS) {
             // New ball is complete, stash it
             numSnowballs++;
             sendNewSnowball();
             formingSnowball = false;
             snowballCollectionPercentage = 0;
-            console.log("NEW SNOWBALL");
+            displaySnowballs();
+            console.log("NEW SNOWBALL", numSnowballs);
         } else {
             snowballCollectionPercentage = timeDiff / SNOWBALL_COLLECT_TIME;
         }
@@ -158,11 +187,13 @@ function levelUpdate() {
                     getMouseX(), getMouseY());
                     
         updatePowerBar();
-        console.log(currentAngle);
         aimCounter++;
     } else {
         if (aiming) {
-            sendFire(currentAngle, currentForce);
+            if (numSnowballs > 0) {
+                sendFire(currentAngle, currentForce);
+                decrementSnowballs();
+            }
         }
         currentForce = 0;
         aiming = false;
