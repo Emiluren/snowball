@@ -3,6 +3,8 @@ const AIM_POWER_SPEED = 0.1;
 const SNOWBALL_COLLECT_TIME = 2000;
 
 var time;
+var snowballCollectionStartTime;
+var snowballCollectionPercentage; // is between 0-1
 
 var map;
 var layer;
@@ -37,6 +39,8 @@ function initLevel() {
     aimCounter = 0;
     numSnowballs = 0;
     formingSnowball = false;
+    snowballCollectionStartTime = 0;
+    snowballCollectionPercentage = 0;
 
     time = new Date().getTime();
     game.stage.backgroundColor = '#909090';
@@ -106,19 +110,42 @@ function getAngle(x1, y1, x2, y2) {
     return Math.atan2((y2 - y1),(x2 - x1));
 }
 
+function getCurrentTime() {
+    return (new Date()).getTime();
+}
+
 function handleSnowballForming() {
     if (isFormSnowballPressed()) {
-        formingSnowball = true;
-    } else {
-        if (formingSnowball) {
-            sendNewSnowball();
+        // start timer
+        if (!formingSnowball) {
+            snowballCollectionStartTime = getCurrentTime();
+            snowballCollectionPercentage = 0;
+            formingSnowball = true;
         }
+
+        var timeDiff = 
+            getCurrentTime() - snowballCollectionStartTime;
+
+        if (timeDiff >= SNOWBALL_COLLECT_TIME) {
+            // New ball is complete, stash it
+            numSnowballs++;
+            sendNewSnowball();
+            formingSnowball = false;
+            snowballCollectionPercentage = 0;
+            console.log("NEW SNOWBALL");
+        } else {
+            snowballCollectionPercentage = timeDiff / SNOWBALL_COLLECT_TIME;
+        }
+
+    } else {
         formingSnowball = false;
+        snowballCollectionPercentage = 0;
     }
+    console.log(snowballCollectionPercentage);
 }
 
 function levelUpdate() {
-    var newTime = new Date().getTime();
+    var newTime = getCurrentTime();
     var deltaTime = (newTime - time)/30;
     time = newTime;
     
