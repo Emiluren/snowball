@@ -100,6 +100,7 @@ function preload() {
     game.load.tilemap('snowballMap', 'assets/map.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('tileset', 'assets/tileset.png');
     game.load.image('snowman', 'assets/snowman.png');
+    game.load.image('arrow', 'assets/arrow.png');
 }
 
 function create() {

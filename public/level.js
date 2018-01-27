@@ -39,9 +39,11 @@ function initLevel() {
     mainPlayerPosition = {x: 300, y: 300};
     mainPlayerHealth = 100;
     mainPlayerSprite = game.add.sprite(
-            mainPlayerPosition.x,
-            mainPlayerPosition.y,
-        'snowman');
+        mainPlayerPosition.x,
+        mainPlayerPosition.y,
+        'snowman'
+    );
+        
 
     for (var i in playerList) {
         var name = playerList[i];
@@ -49,6 +51,12 @@ function initLevel() {
             players[name].sprite = game.add.sprite(0, 0, 'snowman');
         } else {
             players[name].sprite = mainPlayerSprite;
+            players[name].aimer = game.add.sprite(
+                mainPlayerSprite.x,
+                mainPlayerSprite.y, 
+                'arrow'
+            );
+            console.log(mainPlayerSprite.x, mainPlayerSprite.y);
         }
     }
 }
