@@ -21,11 +21,30 @@ $(document).ready(function () {
             addPlayers(playerList);
         },
         "position": function(messageContent) {
-            contentsSplit = messageContent.split(' ');
-            name = contentsSplit[0];
-            x = contentsSplit[1];
-            y = contentsSplit[2];
+            var contentsSplit = messageContent.split(' ');
+            var name = contentsSplit[0];
+            var x = contentsSplit[1];
+            var y = contentsSplit[2];
             updatePlayerPosition(name, x, y);
+        },
+        "throw": function(messageContent) {
+            var serverBalls = {};
+            var contentsSplit = messageContent.split(';');
+            for (var snowball in contentsSplit) {
+                var data = snowball.split(' ');
+                var id = data[0];
+                var x = coordinates[1];
+                var y = coordinates[2];
+                serverBalls[id] = {'x':x, 'y':y};
+            }
+            updateSnowballs(serverBalls);
+        },
+        "health": function(messageContent) {
+            var contentsSplit = messageContent.split(' ');
+            var name = contentsSplit[0];
+            var health = contentsSplit[1];
+            
+            updateHealthBar(name, health);
         }
     }
 
@@ -106,6 +125,7 @@ function preload() {
     game.load.image('arrow', 'assets/arrow.png');
     game.load.image('powerbar', 'assets/powerbar.png');
     game.load.image('snowball', 'assets/snowball.png');
+    game.load.image('healthbar', 'assets/healthbar.png');
     
     game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
 }

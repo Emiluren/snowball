@@ -36,6 +36,7 @@ var powerBar;
 
 var snowball;
 var snowballs = [];
+var thrownSnowballs = {};
 
 function initLevel() {
     aiming = false;
@@ -98,6 +99,16 @@ function updatePlayerPosition(name, x, y) {
     }
 }
 
+function updateHealthBar(name, health) {
+    players[name].health = health;
+}
+
+function displayHealthBars () {
+    for (var player in players) {
+        var healthbar = 0;
+    }
+}
+
 function updatePowerBar() {
     powerBar.scale.x = currentForce * 100;
     powerBar.tint = rgb2hex(255*currentForce, 50*(1 - currentForce) + 205, 0);
@@ -137,9 +148,27 @@ function decrementSnowballs() {
     numSnowballs--;
 }
 
-function initText() {
-    game.add.bitmapText(game.width - 130, 5, 'carrier_command', 'Snowballs', 10);
-    game.add.bitmapText(5, 5, 'carrier_command', 'Power', 10);
+function updateSnowball(serverBalls) {
+    // for every snowball stored on the server
+    for (var serverBall in serverBalls) {
+        // exists on server, exists on client
+        if (thrownSnowballs[serverBall] !== undefined) {
+            thrownSnowballs[serverBall].x = serverBalls[serverBall].x;
+            thrownSnowballs[serverBall].y = serverBalls[serverBall].y;
+        }
+        // exists on server, does not exist on client
+        else {
+            var snowballSprite = game.add.sprite(x, y, 'snowball');
+            thrownSnowballs[id] = snowballSprite;
+        }
+    }
+    // for every snowball stored on the client
+    for (var clientBall in thrownSnowballs) {
+        // exists on client, does not exists on server
+        if (serverBalls[clientBall] === undefined) {
+            delete thrownSnowballs[clientBall];
+        }
+    }
 }
 
 function handleSnowballForming() {
@@ -161,7 +190,6 @@ function handleSnowballForming() {
             formingSnowball = false;
             snowballCollectionPercentage = 0;
             displaySnowballs();
-            console.log("NEW SNOWBALL", numSnowballs);
         } else {
             snowballCollectionPercentage = timeDiff / SNOWBALL_COLLECT_TIME;
         }
@@ -170,7 +198,11 @@ function handleSnowballForming() {
         formingSnowball = false;
         snowballCollectionPercentage = 0;
     }
-    console.log(snowballCollectionPercentage);
+}
+
+function initText() {
+    game.add.bitmapText(game.width - 130, 5, 'carrier_command', 'Snowballs', 10);
+    game.add.bitmapText(5, 5, 'carrier_command', 'Power', 10);
 }
 
 function levelUpdate() {
