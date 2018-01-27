@@ -12,9 +12,7 @@ def run_main_loop(lobby, event_loop):
     while running:
         # TODO: update player positions and broadcast new state
         update_players(lobby)
-        print('NEJ')
         asyncio.run_coroutine_threadsafe(broadcast_positions(lobby), event_loop)
-        print('JO')
         time.sleep(1/30)
 
 async def broadcast_positions(lobby):
