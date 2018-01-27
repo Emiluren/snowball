@@ -23,6 +23,7 @@ def run_main_loop(lobby, stop_event, event_loop):
         # TODO: update player positions and broadcast new state
         # pdb.set_trace()
         update_players(lobby)
+        print('kebab')
         # changed_healths = update_snowballs(lobby)
         
         # if changed_healths:
