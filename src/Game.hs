@@ -27,14 +27,24 @@ broadcastPlayerPosition serverStateVar lobbyName playerName client =
        "position:" <> playerName <> " " <>
          fromString (show x) <> " " <> fromString (show y)
 
+updatePlayers :: LobbyState -> LobbyState
+updatePlayers =
+  lobbyClients.traverse.clientPlayerData %~ updatePlayer
+
 runMainLoop :: STM.TVar ServerState -> B.ByteString -> IO ()
 runMainLoop serverStateVar lobbyName = do
-  mLobby <- (!? lobbyName) <$> STM.readTVarIO serverStateVar
+  mLobby <- STM.atomically $ do
+    let runUpdates lobby = STM.modifyTVar' serverStateVar (at lobbyName . _Just .~ updatePlayers lobby)
+    mLobby <- (!? lobbyName) <$> STM.readTVar serverStateVar
+    maybe (return ()) runUpdates mLobby
+    return mLobby
+
   case mLobby of
-    Nothing -> do
-      BC.putStrLn $ "All users have exited " <> lobbyName <> ". Closing game loop."
     Just lobby -> do
       let clients = _lobbyClients lobby
+      --STM.atomically $ STM.modifyTVar' serverStateVar updatePlayers
       _ <- Map.traverseWithKey (broadcastPlayerPosition serverStateVar lobbyName) clients
       threadDelay frameTime
       runMainLoop serverStateVar lobbyName
+    Nothing ->
+      BC.putStrLn $ "All users have exited " <> lobbyName <> ". Closing game loop."
