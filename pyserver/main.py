@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+import level
 import asyncio
 import websockets
+
+level.init_level()
 
 lobbies = {}
 
