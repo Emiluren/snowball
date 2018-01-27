@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import threading
 import player
 import game
 import level
@@ -54,7 +55,8 @@ async def sockethandler(websocket, path):
             await send_to_others("chat:" + message_string)
 
         async def game_start_handler(content):
-            threading.Thread(target=game.run_main_loop, args=(lobby,))
+            t = threading.Thread(target=game.run_main_loop, args=(lobby,))
+            t.start()
             await broadcast("start game:" + " ".join(lobby.keys()))
 
         async def key_down_handler(content):
@@ -80,7 +82,8 @@ async def sockethandler(websocket, path):
             "key up": key_up_handler
         }
 
-        async for message in websocket:
+        while True:
+            message = await websocket.recv()
             split_message = message.split(':', 1)
             message_type = split_message[0]
             message_content = split_message[1] if len(split_message) > 1 else ""

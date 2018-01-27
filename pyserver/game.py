@@ -1,6 +1,9 @@
+import asyncio
 import vec
 import time
 import player
+import level
+import util
 
 GRAVITY_ACCELERATION = 1
 
@@ -8,7 +11,18 @@ def run_main_loop(lobby):
     running = True
     while running:
         # TODO: update player positions and broadcast new state
+        update_players(lobby)
+        print('NEJ')
+        asyncio.get_event_loop().run_until_complete(
+            broadcast_positions(lobby))
+        print('JO')
         time.sleep(1/30)
+
+async def broadcast_positions(lobby):
+    for username in lobby:
+        x, y = lobby[username].player.position
+        await util.broadcast(lobby,
+            'position: {} {} {}'.format(username, x, y))
 
 
 def other_players(player, lobby):
@@ -18,7 +32,7 @@ def other_players(player, lobby):
 def update_player(player, lobby):
     px, py = player.position
     vx, vy = player.velocity
-    if can_move_to(player.PLAYER_WIDTH, player.PLAYER_HEIGHT, 
+    if level.can_move_to(level.PLAYER_WIDTH, level.PLAYER_HEIGHT, 
                    px, round(py + vy)):
         player.velocity = (vx, vy + vy*GRAVITY_ACCELERATION)
         player.position = (px, py + vy)
@@ -28,16 +42,14 @@ def update_player(player, lobby):
     px, py = player.position
     dx = player.left_pressed*(-1) + player.right_pressed
 
-    if can_move_to(player.PLAYER_WIDTH, player.PLAYER_HEIGHT, 
+    if level.can_move_to(level.PLAYER_WIDTH, level.PLAYER_HEIGHT, 
                    px + dx, py):
         player.position = (px + dx, py)
-
-
-
 
 
 def update_players(lobby):
     for client_name in lobby:
         player = lobby[client_name].player
         update_player(player, lobby)
+
 
