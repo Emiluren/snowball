@@ -116,6 +116,7 @@ chatApp serverStateVar lobbyName username pending = do
                 BC.putStrLn $ "(" <> lobbyName <> ") " <> "Starting game with " <> clientNames
                 sendToEveryone serverStateVar lobbyName $ "start game:" <> clientNames
                 _ <- forkIO $ Game.runMainLoop serverStateVar lobbyName
+                return ()
           )
         , ( "key down"
           , \keyName ->
