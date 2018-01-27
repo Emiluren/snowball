@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import threading
+import asyncio
 import player
 import game
 import level
@@ -21,7 +22,6 @@ class Client:
     def __init__(self, websocket, player):
         self.websocket = websocket
         self.player = player
-
 
 async def sockethandler(websocket, path):
     lobby_and_username = list(filter(None, path.split('/')))
@@ -55,7 +55,7 @@ async def sockethandler(websocket, path):
             await send_to_others("chat:" + message_string)
 
         async def game_start_handler(content):
-            t = threading.Thread(target=game.run_main_loop, args=(lobby,))
+            t = threading.Thread(target=game.run_main_loop, args=(lobby, asyncio.get_event_loop()))
             t.start()
             await broadcast("start game:" + " ".join(lobby.keys()))
 

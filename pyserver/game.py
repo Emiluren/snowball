@@ -7,14 +7,13 @@ import util
 
 GRAVITY_ACCELERATION = 1
 
-def run_main_loop(lobby):
+def run_main_loop(lobby, event_loop):
     running = True
     while running:
         # TODO: update player positions and broadcast new state
         update_players(lobby)
         print('NEJ')
-        asyncio.get_event_loop().run_until_complete(
-            broadcast_positions(lobby))
+        asyncio.run_coroutine_threadsafe(broadcast_positions(lobby), event_loop)
         print('JO')
         time.sleep(1/30)
 
