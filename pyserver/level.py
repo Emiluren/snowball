@@ -46,6 +46,10 @@ def overlaps(a1, a2, b1, b2):
            max(b1, b2) <= min(a1, a2)
 
 
+def outside_screen(width, height, new_x, new_y):
+    return new_x < 0 or new_x + width >= len(tiles[0]) or new_y + height >= len(tiles)
+
+
 def can_move_to(width, height, new_x, new_y, players={}):
     """
     Returns whether an entity with the given width and
@@ -54,13 +58,19 @@ def can_move_to(width, height, new_x, new_y, players={}):
 
     (int, int, int, int) -> (Player|None, bool)
     """
-    covered_tiles = map(lambda row: 
-                        row[new_x:new_x+width],
-                        tiles[new_y:new_y+height])
-    
-    for row in covered_tiles:
-        if any(row):
-            return None, False 
+
+    if outside_screen(width, height, new_x, new_y):
+        return None, False
+
+    # Allow entities to exit the top of the screen to fall back
+    if new_y >= 0:
+        covered_tiles = map(lambda row: 
+                            row[new_x:new_x+width],
+                            tiles[new_y:new_y+height])
+
+        for row in covered_tiles:
+            if any(row):
+                return None, False 
     
     for player in players.values():
         px, py = player.position
