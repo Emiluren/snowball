@@ -88,6 +88,10 @@ function sendKeystroke(stroke, down) {
     }
 }
 
+function sendFire(angle, force) {
+    ws.send('fire:' + angle + ' ' + force);
+}
+
 function sendJump() {
     ws.send('jump');
 }

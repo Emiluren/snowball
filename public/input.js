@@ -59,3 +59,11 @@ function isLeftMouseButtonPressed() {
     return game.input.activePointer.leftButton.isDown;
 }
 
+function getMouseX() {
+    return game.input.activePointer.x
+}
+
+function getMouseY() {
+    return game.input.activePointer.y;
+}
+
