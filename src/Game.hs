@@ -16,8 +16,11 @@ import NetworkUtils
 import Player
 import ServerTypes
 
-frameTime :: Int
-frameTime = 1000000 `div` 30
+frameMicros :: Int
+frameMicros = 1000000 `div` 30
+
+frameTime :: Float
+frameTime = 1/30
 
 broadcastPlayerPosition ::
   STM.TVar ServerState -> B.ByteString -> B.ByteString -> Client -> IO ()
@@ -26,6 +29,13 @@ broadcastPlayerPosition serverStateVar lobbyName playerName client =
   in sendToEveryone serverStateVar lobbyName $
        "position:" <> playerName <> " " <>
          fromString (show x) <> " " <> fromString (show y)
+
+updatePlayer :: Player -> Player
+updatePlayer player = player & playerPosition . _x %~ (+ dv)
+  where dv =
+          if _playerLeftPressed player && not (_playerRightPressed player) then -10
+          else if _playerRightPressed player && not (_playerLeftPressed player) then 10
+          else 0
 
 updatePlayers :: LobbyState -> LobbyState
 updatePlayers =
@@ -44,7 +54,7 @@ runMainLoop serverStateVar lobbyName = do
       let clients = _lobbyClients lobby
       --STM.atomically $ STM.modifyTVar' serverStateVar updatePlayers
       _ <- Map.traverseWithKey (broadcastPlayerPosition serverStateVar lobbyName) clients
-      threadDelay frameTime
+      threadDelay frameMicros
       runMainLoop serverStateVar lobbyName
     Nothing ->
       BC.putStrLn $ "All users have exited " <> lobbyName <> ". Closing game loop."

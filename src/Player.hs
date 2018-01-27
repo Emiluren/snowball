@@ -27,6 +27,3 @@ newPlayer = do
     }
 
 makeLenses ''Player
-
-updatePlayer :: Player -> Player
-updatePlayer player = player
