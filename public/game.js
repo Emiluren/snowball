@@ -36,7 +36,7 @@ $(document).ready(function () {
         $('#login').css('display', 'none');
         $('#console').css('display', 'block');
 
-        ws = new WebSocket("ws://localhost:8000/chat/" + lobby + '/' + username);
+        ws = new WebSocket("ws://localhost:8765/" + lobby + '/' + username);
         appendOutput('status', 'Opening WebSockets connection...\n');
 
         ws.onerror = function(event) {
