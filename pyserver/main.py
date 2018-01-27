@@ -91,11 +91,16 @@ async def sockethandler(websocket, path):
         else:
             print('Unknown key', content)
 
+    async def jump_handler(content):
+        (vx, vy) = client.player.velocity
+        client.player.velocity = (vx, vy - 20)
+
     message_handler = {
         "chat": chat_handler,
         "start game": game_start_handler,
         "key down": key_down_handler,
-        "key up": key_up_handler
+        "key up": key_up_handler,
+        "jump": jump_handler
     }
 
     try:

@@ -41,7 +41,7 @@ def update_player(player, lobby):
         player.velocity = (vx, 0);
 
     px, py = player.position
-    dx = player.left_pressed*(-1) + player.right_pressed
+    dx = (player.left_pressed*(-1) + player.right_pressed) * 10
 
     _, can_move = level.can_move_to(level.PLAYER_WIDTH, 
                                     level.PLAYER_HEIGHT, 
