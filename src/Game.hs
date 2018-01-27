@@ -18,6 +18,6 @@ runMainLoop serverStateVar lobbyName = do
     Nothing -> do
       BC.putStrLn $ "All users have exited " <> lobbyName <> ". Closing game loop."
     Just lobby -> do
-      sendToEveryone serverStateVar lobbyName $ "chat: this is a lie"
+      --sendToEveryone serverStateVar lobbyName $ "chat: this is a lie"
       threadDelay 1000000
       runMainLoop serverStateVar lobbyName
