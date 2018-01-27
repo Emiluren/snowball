@@ -17,6 +17,10 @@ warnings.filterwarnings("default", '', ResourceWarning)
 
 lobbies = {}
 
+class Lobby:
+    def __init__(self):
+        self.clients = {}
+        self.thread = None
 
 class Client:
     def __init__(self, websocket, player):
@@ -27,61 +31,79 @@ async def sockethandler(websocket, path):
     lobby_and_username = list(filter(None, path.split('/')))
     if len(lobby_and_username) != 2:
         print("invalid lobby/username path", lobby_and_username)
-    else:
-        lobby_name, username = lobby_and_username
-        if lobby_name not in lobbies:
-            lobbies[lobby_name] = {}
-            print("Creating new lobby", lobby_name)
+        await websocket.send("chat:(Server) lobby or user name is invalid")
+        return
 
-        # TODO: add disconnect handling
+    lobby_name, username = lobby_and_username
+    if lobby_name not in lobbies:
+        lobbies[lobby_name] = Lobby()
+        print("Creating new lobby", lobby_name)
 
-        lobby = lobbies[lobby_name]
-        lobby[username] = Client(websocket, player.Player(username))
+    lobby = lobbies[lobby_name]
 
-        client = lobby[username]
+    if lobby.thread:
+        print("This lobby ({}) is already playing a game. {} cannot join now.".format(lobby_name, username))
+        await websocket.send("chat:(Server) The lobby {} is already playing a game. Choose a different lobby name".format(lobby_name))
+        return
 
-        async def send_to_others(message):
-            for client_name in lobby:
-                if client_name != username:
-                    await lobby[client_name].websocket.send(message)
+    lobby.clients[username] = Client(websocket, player.Player(username))
+    print("{} has joined {}".format(username, lobby_name))
 
-        async def broadcast(message):
-            for client_name in lobby:
-                await lobby[client_name].websocket.send(message)
+    client = lobby.clients[username]
 
-        async def chat_handler(content):
-            message_string = "({}) {}: {}".format(lobby_name, username, content)
-            print(message_string)
-            await send_to_others("chat:" + message_string)
+    thread_stop_event = threading.Event()
 
-        async def game_start_handler(content):
-            t = threading.Thread(target=game.run_main_loop, args=(lobby, asyncio.get_event_loop()))
-            t.start()
-            await broadcast("start game:" + " ".join(lobby.keys()))
+    async def send_to_others(message):
+        for client_name in lobby.clients:
+            if client_name != username:
+                await lobby.clients[client_name].websocket.send(message)
 
-        async def key_down_handler(content):
-            if content == 'left':
-                client.player.left_pressed = True
-            elif content == 'right':
-                client.player.right_pressed = True
-            else:
-                print('Unknown key', content)
+    async def broadcast(message):
+        for client_name in lobby.clients:
+            await lobby.clients[client_name].websocket.send(message)
 
-        async def key_up_handler(content):
-            if content == 'left':
-                client.player.left_pressed = False
-            elif content == 'right':
-                client.player.right_pressed = False
-            else:
-                print('Unknown key', content)
+    async def chat_handler(content):
+        message_string = "({}) {}: {}".format(lobby_name, username, content)
+        print(message_string)
+        await send_to_others("chat:" + message_string)
 
-        message_handler = {
-            "chat": chat_handler,
-            "start game": game_start_handler,
-            "key down": key_down_handler,
-            "key up": key_up_handler
-        }
+    async def game_start_handler(content):
+        if not lobby.thread:
+            lobby.thread = threading.Thread(
+                target = game.run_main_loop,
+                args = (lobby.clients, thread_stop_event, asyncio.get_event_loop()))
+            lobby.thread.start()
+            await broadcast("start game:" + " ".join(lobby.clients.keys()))
 
+    async def key_down_handler(content):
+        if content == 'left':
+            client.player.left_pressed = True
+        elif content == 'right':
+            client.player.right_pressed = True
+        else:
+            print('Unknown key', content)
+
+    async def key_up_handler(content):
+        if content == 'left':
+            client.player.left_pressed = False
+        elif content == 'right':
+            client.player.right_pressed = False
+        else:
+            print('Unknown key', content)
+
+    async def jump_handler(content):
+        (vx, vy) = client.player.velocity
+        client.player.velocity = (vx, vy - 20)
+
+    message_handler = {
+        "chat": chat_handler,
+        "start game": game_start_handler,
+        "key down": key_down_handler,
+        "key up": key_up_handler,
+        "jump": jump_handler
+    }
+
+    try:
         while True:
             message = await websocket.recv()
             split_message = message.split(':', 1)
@@ -91,6 +113,17 @@ async def sockethandler(websocket, path):
                 await message_handler[message_type](message_content)
             else:
                 print("Unknown message type:", message)
+    except websockets.exceptions.ConnectionClosed:
+        pass
+
+    print("({}) {} has disconnected".format(lobby_name, username))
+    del lobby.clients[username]
+    if not lobby.clients:
+        print("The last client disconnected from {}. Shutting down that lobby.".format(lobby_name))
+        if lobby.thread:
+            thread_stop_event.set()
+            lobby.thread.join()
+        del lobbies[lobby_name]
 
 asyncio.get_event_loop().run_until_complete(
     websockets.serve(sockethandler, 'localhost', 8765))

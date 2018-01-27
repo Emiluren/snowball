@@ -29,13 +29,25 @@ def init_level():
     height = main_layer['height']
     
     global tiles
-    tiles = [[data[i*width + j] != 0 
-              for j in range(width)] for i in range(height)]
+    tiles = []
+    for i in range(height):
+        row = []
+        for j in range(width):
+            val = data[i*width + j] != 0
+            row += [val]*TILE_SIZE;
+        tiles += [row]*TILE_SIZE;
+            
+    # tiles = [[data[i*width + j] != 0 
+    #           for j in range(width*TILE_SIZE)] for i in range(height*TILE_SIZE)]
 
 
 def overlaps(a1, a2, b1, b2):
     return max(a1, a2) <= min(b1, b2) or \
            max(b1, b2) <= min(a1, a2)
+
+
+def outside_screen(width, height, new_x, new_y):
+    return new_x < 0 or new_x + width >= len(tiles[0]) or new_y + height >= len(tiles)
 
 
 def can_move_to(width, height, new_x, new_y, players={}):
@@ -46,13 +58,19 @@ def can_move_to(width, height, new_x, new_y, players={}):
 
     (int, int, int, int) -> (Player|None, bool)
     """
-    covered_tiles = map(lambda row: 
-                        row[round(new_x/TILE_SIZE):round((new_x+width)/TILE_SIZE)],
-                        tiles[round(new_y/TILE_SIZE):round((new_y+height)/TILE_SIZE)])
-    
-    for row in covered_tiles:
-        if any(row):
-            return None, False 
+
+    if outside_screen(width, height, new_x, new_y):
+        return None, False
+
+    # Allow entities to exit the top of the screen to fall back
+    if new_y >= 0:
+        covered_tiles = map(lambda row: 
+                            row[new_x:new_x+width],
+                            tiles[new_y:new_y+height])
+
+        for row in covered_tiles:
+            if any(row):
+                return None, False 
     
     for player in players.values():
         px, py = player.position
