@@ -73,15 +73,17 @@ $(document).ready(function () {
 });
 
 function preload() {
-    game.load.image('snowblock', 'assets/snowblock.png');
-    game.load.tilemap('tiles', 'assets/maptiles.json', null, Phaser.Tilemap.TILED_JSON);
+    game.load.tilemap('snowballMap', 'assets/map.json', null, Phaser.Tilemap.TILED_JSON);
+    game.load.image('tileset', 'assets/tileset.png');
 }
 
 function create() {
     game.stage.backgroundColor = '#909090';
-    map = game.add.tilemap('tiles');
-    map.addTilesetImage('mapLayer', 'snowblock');
-    layer = map.createLayer('map');
+    
+    map = game.add.tilemap('snowballMap');
+    map.addTilesetImage('tileset', 'tileset');
+    
+    layer = map.createLayer('mapLayer');
     layer.resizeWorld();
 }
 
