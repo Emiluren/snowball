@@ -188,8 +188,13 @@
         </struct>
         <key>individualSpriteSettings</key>
         <map type="IndividualSpriteSettingsMap">
+            <key type="filename">bush-snowy.png</key>
+            <key type="filename">bush.png</key>
+            <key type="filename">platform-concrete.png</key>
+            <key type="filename">platform-dirt.png</key>
             <key type="filename">snowblock.png</key>
             <key type="filename">stone.png</key>
+            <key type="filename">trunk.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
@@ -199,6 +204,11 @@
         <array>
             <filename>stone.png</filename>
             <filename>snowblock.png</filename>
+            <filename>trunk.png</filename>
+            <filename>platform-concrete.png</filename>
+            <filename>platform-dirt.png</filename>
+            <filename>bush.png</filename>
+            <filename>bush-snowy.png</filename>
         </array>
         <key>ignoreFileList</key>
         <array/>
