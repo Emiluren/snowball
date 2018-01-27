@@ -55,8 +55,6 @@ $(document).ready(function () {
             var splitMessage = event.data.split(/:(.+)/);
             var messageType = splitMessage[0];
             var messageContent = splitMessage[1];
-            console.info(event.data);
-
             if (messageType in messageHandler) {
                 messageHandler[messageType](messageContent);
             } else {
@@ -97,11 +95,16 @@ function sendJump() {
     ws.send('jump');
 }
 
+function sendNewSnowball() {
+    ws.send('new ball');
+}
+
 function preload() {
     game.load.tilemap('snowballMap', 'assets/map.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('tileset', 'assets/tileset.png');
     game.load.image('snowman', 'assets/snowman.png');
     game.load.image('arrow', 'assets/arrow.png');
+    game.load.image('powerbar', 'assets/powerbar.png');
 }
 
 function create() {
