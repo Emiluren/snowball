@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import player
+import game
 import level
 import asyncio
 import logging
@@ -13,12 +15,14 @@ warnings.filterwarnings("default", '', ResourceWarning)
 
 lobbies = {}
 
-class Client:
-    def __init__(self, websocket, playerState):
-        self.websocket = websocket
-        self.playerState = playerState
 
-async def echo(websocket, path):
+class Client:
+    def __init__(self, websocket, player):
+        self.websocket = websocket
+        self.player = player
+
+
+async def sockethandler(websocket, path):
     lobby_and_username = list(filter(None, path.split('/')))
     if len(lobby_and_username) != 2:
         print("invalid lobby/username path", lobby_and_username)
@@ -31,7 +35,9 @@ async def echo(websocket, path):
         # TODO: add disconnect handling
 
         lobby = lobbies[lobby_name]
-        lobby[username] = Client(websocket, {})
+        lobby[username] = Client(websocket, player.Player(username))
+
+        client = lobby[username]
 
         async def send_to_others(message):
             for client_name in lobby:
@@ -48,14 +54,24 @@ async def echo(websocket, path):
             await send_to_others("chat:" + message_string)
 
         async def game_start_handler(content):
-            threading.Thread(target=game.run_main_loop)
+            threading.Thread(target=game.run_main_loop, args=(lobby,))
             await broadcast("start game:" + " ".join(lobby.keys()))
 
         async def key_down_handler(content):
-            print(content, "was pressed")
+            if content == 'left':
+                client.player.left_pressed = True
+            elif content == 'right':
+                client.player.right_pressed = True
+            else:
+                print('Unknown key', content)
 
         async def key_up_handler(content):
-            print(content, "was released")
+            if content == 'left':
+                client.player.left_pressed = False
+            elif content == 'right':
+                client.player.right_pressed = False
+            else:
+                print('Unknown key', content)
 
         message_handler = {
             "chat": chat_handler,
@@ -74,6 +90,6 @@ async def echo(websocket, path):
                 print("Unknown message type:", message)
 
 asyncio.get_event_loop().run_until_complete(
-    websockets.serve(echo, 'localhost', 8765))
+    websockets.serve(sockethandler, 'localhost', 8765))
 
 asyncio.get_event_loop().run_forever()

@@ -37,7 +37,7 @@ def overlaps(a1, a2, b1, b2):
            max(b1, b2) <= min(a1, a2)
 
 
-def can_move_to(width, height, new_x, new_y):
+def can_move_to(width, height, new_x, new_y, players={}):
     """
     Returns whether an entity with the given width and
     height can move to the given position. Also returns
@@ -45,7 +45,6 @@ def can_move_to(width, height, new_x, new_y):
 
     (int, int, int, int) -> (Player|None, bool)
     """
-    pdb.set_trace()
     covered_tiles = map(lambda row: row[new_x:new_x+width], 
                         tiles[new_y:new_y+height])
     
