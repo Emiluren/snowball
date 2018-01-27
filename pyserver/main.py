@@ -72,7 +72,7 @@ async def sockethandler(websocket, path):
         if not lobby.thread:
             lobby.thread = threading.Thread(
                 target = game.run_main_loop,
-                args = (lobby.clients, thread_stop_event, asyncio.get_event_loop()))
+                args = (lobby, thread_stop_event, asyncio.get_event_loop()))
             lobby.thread.start()
             await broadcast("start game:" + " ".join(lobby.clients.keys()))
 
@@ -96,12 +96,19 @@ async def sockethandler(websocket, path):
         (vx, vy) = client.player.velocity
         client.player.velocity = (vx, vy - 20)
 
+    async def fire_handler(content):
+        angle, force = content.split(' ')
+        player_pos = client.player.position
+        create_snowball(lobby, player_pos, 
+                        float(angle), float(force))
+
     message_handler = {
         "chat": chat_handler,
         "start game": game_start_handler,
         "key down": key_down_handler,
         "key up": key_up_handler,
-        "jump": jump_handler
+        "jump": jump_handler,
+        "fire": fire_handler
     }
 
     try:
