@@ -1,4 +1,6 @@
 
+const COLLECT_SNOWBALL_KEY = Phaser.Keyboard.W;
+
 function initKeyboard() {
     keyD = game.input.keyboard.addKey(Phaser.Keyboard.D);
     keyD.onDown.add(keyDPressed, this);
@@ -41,6 +43,10 @@ function keyDPressed() {
 
 function keyDReleased() {
     sendKeystroke('right', false);
+}
+
+function isFormSnowballPressed() {
+    return game.input.keyboard.isDown(COLLECT_SNOWBALL_KEY);
 }
 
 function keySpacePressed() {

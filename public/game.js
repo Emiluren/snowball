@@ -95,6 +95,10 @@ function sendJump() {
     ws.send('jump');
 }
 
+function sendNewSnowball() {
+    ws.send('new ball');
+}
+
 function preload() {
     game.load.tilemap('snowballMap', 'assets/map.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('tileset', 'assets/tileset.png');
