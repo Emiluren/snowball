@@ -28,6 +28,8 @@ var aiming;
 var currentForce;
 var currentAngle;
 var aimCounter;
+var aimSprite;
+var powerBar;
 
 function initLevel() {
     aiming = false;
@@ -48,16 +50,23 @@ function initLevel() {
     mainPlayerPosition = {x: 300, y: 300};
     mainPlayerHealth = 100;
     mainPlayerSprite = game.add.sprite(
-            mainPlayerPosition.x,
-            mainPlayerPosition.y,
-        'snowman');
+        mainPlayerPosition.x,
+        mainPlayerPosition.y,
+        'snowman'
+    );
+    
+    powerBar = game.add.sprite(10, 110, 'powerbar');
 
     for (var i in playerNames) {
         var name = playerNames[i];
         if (name != mainPlayerName) {
             sprite = game.add.sprite(0, 0, 'snowman');
             players[name] = {x: 0, y: 0, health: 0, sprite: sprite};
-        } 
+        }
+        else {
+            aimSprite = game.add.sprite(100, 100, 'arrow');
+            aimSprite.anchor.setTo(0,0.5);
+        }
     }
 }
 
@@ -67,6 +76,9 @@ function updatePlayerPosition(name, x, y) {
         mainPlayerPosition.y = y;
         mainPlayerSprite.x = x;
         mainPlayerSprite.y = y;
+        aimSprite.x = mainPlayerPosition.x + mainPlayerSprite.width/2;
+        aimSprite.y = mainPlayerPosition.y + 5;
+        aimSprite.angle = currentAngle * 180/Math.PI;
     } else {
         var p = players[name];
         p.x = x;
@@ -76,12 +88,22 @@ function updatePlayerPosition(name, x, y) {
     }
 }
 
+function updatePowerBar() {
+    powerBar.scale.y = -currentForce * 100;
+    powerBar.tint = rgb2hex(255*currentForce, 50*(1 - currentForce) + 205, 0);
+}
+
+function rgb2hex(red, green, blue) {
+    var rgb = blue | (green << 8) | (red << 16);
+    return rgb;
+}
+
 function addPlayers(playerList) {
     playerNames = playerList;
 }
 
 function getAngle(x1, y1, x2, y2) {
-    return -Math.atan2((y2 - y1),(x2 - x1));
+    return Math.atan2((y2 - y1),(x2 - x1));
 }
 
 function handleSnowballForming() {
@@ -103,11 +125,13 @@ function levelUpdate() {
     if (isLeftMouseButtonPressed()) {
         aiming = true;
         currentForce = (-Math.cos(
-                aimCounter*deltaTime*AIM_POWER_SPEED) + 1)/2;
+                aimCounter*AIM_POWER_SPEED) + 1)/2;
         currentAngle = getAngle(mainPlayerPosition.x,
                     mainPlayerPosition.y, 
                     getMouseX(), getMouseY());
-        console.log(currentForce);
+                    
+        updatePowerBar();
+        console.log(currentAngle);
         aimCounter++;
     } else {
         if (aiming) {

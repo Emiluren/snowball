@@ -25,7 +25,7 @@ $(document).ready(function () {
             name = contentsSplit[0];
             x = contentsSplit[1];
             y = contentsSplit[2];
-            updatePlayerPosition(name, x, y);
+            updatePlayerPosition(name, 100, 100);
         }
     }
 
@@ -55,8 +55,6 @@ $(document).ready(function () {
             var splitMessage = event.data.split(/:(.+)/);
             var messageType = splitMessage[0];
             var messageContent = splitMessage[1];
-            console.info(event.data);
-
             if (messageType in messageHandler) {
                 messageHandler[messageType](messageContent);
             } else {
@@ -105,6 +103,8 @@ function preload() {
     game.load.tilemap('snowballMap', 'assets/map.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('tileset', 'assets/tileset.png');
     game.load.image('snowman', 'assets/snowman.png');
+    game.load.image('arrow', 'assets/arrow.png');
+    game.load.image('powerbar', 'assets/powerbar.png');
 }
 
 function create() {

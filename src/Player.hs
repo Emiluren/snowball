@@ -27,5 +27,3 @@ newPlayer = do
     }
 
 makeLenses ''Player
-
-
