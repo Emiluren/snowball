@@ -55,6 +55,7 @@ $(document).ready(function () {
             var splitMessage = event.data.split(/:(.+)/);
             var messageType = splitMessage[0];
             var messageContent = splitMessage[1];
+            console.info(event.data);
 
             if (messageType in messageHandler) {
                 messageHandler[messageType](messageContent);
