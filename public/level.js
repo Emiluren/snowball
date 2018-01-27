@@ -3,6 +3,11 @@
 // health and sprite.
 // Does not include this client's player
 // name -> {x, y, health, sprite}
+
+const AIM_POWER_SPEED = 0.1;
+
+var time;
+
 var map;
 var layer;
 var players = {};
@@ -12,7 +17,17 @@ var mainPlayerHealth;
 var mainPlayerSprite;
 var mainPlayerName;
 
+var aiming;
+var currentForce;
+var currentAngle;
+var aimCounter;
+
 function initLevel() {
+    aiming = false;
+    currentForce = 0;
+    aimCounter = 0;
+
+    time = new Date().getTime();
     game.stage.backgroundColor = '#909090';
     
     map = game.add.tilemap('snowballMap');
@@ -51,7 +66,31 @@ function addPlayers(playerList) {
     }
 }
 
+function getAngle(x1, y1, x2, y2) {
+    return -Math.atan2((y2 - y1),(x2 - x1));
+}
+
 function levelUpdate() {
+    var newTime = new Date().getTime();
+    var deltaTime = (newTime - time)/30;
+    time = newTime;
     
+    if (isLeftMouseButtonPressed()) {
+        aiming = true;
+        currentForce = (-Math.cos(
+                aimCounter*deltaTime*AIM_POWER_SPEED) + 1)/2;
+        currentAngle = getAngle(mainPlayerPosition.x,
+                    mainPlayerPosition.y, 
+                    getMouseX(), getMouseY());
+        console.log(currentForce);
+        aimCounter++;
+    } else {
+        if (aiming) {
+            sendFire(currentAngle, currentForce);
+        }
+        currentForce = 0;
+        aiming = false;
+        aimCounter = 0;
+    }
 }
 
