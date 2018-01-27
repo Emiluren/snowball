@@ -1,16 +1,19 @@
 
-// map of the player names mapped to their position, 
-// health and sprite.
-// Does not include this client's player
-// name -> {x, y, health, sprite}
-
 const AIM_POWER_SPEED = 0.1;
 
 var time;
 
 var map;
 var layer;
+
+// map of the player names mapped to their position, 
+// health and sprite.
+// Does not include this client's player
+// name -> {x, y, health, sprite}
 var players = {};
+
+// List of all the players' names
+var playerNames = [];
 
 var mainPlayerPosition;
 var mainPlayerHealth;
@@ -45,18 +48,11 @@ function initLevel() {
     );
         
 
-    for (var i in playerList) {
-        var name = playerList[i];
+    for (var i in playerNames) {
+        var name = playerNames[i];
         if (name != mainPlayerName) {
-            players[name].sprite = game.add.sprite(0, 0, 'snowman');
-        } else {
-            players[name].sprite = mainPlayerSprite;
-            players[name].aimer = game.add.sprite(
-                mainPlayerSprite.x,
-                mainPlayerSprite.y, 
-                'arrow'
-            );
-            console.log(mainPlayerSprite.x, mainPlayerSprite.y);
+            sprite = game.add.sprite(0, 0, 'snowman');
+            players[name] = {x: 0, y: 0, health: 0, sprite: sprite};
         }
     }
 }
@@ -67,19 +63,17 @@ function updatePlayerPosition(name, x, y) {
         mainPlayerPosition.y = y;
         mainPlayerSprite.x = x;
         mainPlayerSprite.y = y;
+    } else {
+        var p = players[name];
+        p.x = x;
+        p.y = y;
+        p.sprite.x = x;
+        p.sprite.y = y;
     }
-    var p = players[name];
-    p.x = x;
-    p.y = y;
-    p.sprite.x = x;
-    p.sprite.y = y;
 }
 
 function addPlayers(playerList) {
-    for (var i in playerList) {
-        var name = playerList[i];
-        players[name] = {x: 0, y: 0, health: 0, sprite: null};
-    }
+    playerNames = playerList;
 }
 
 function getAngle(x1, y1, x2, y2) {
