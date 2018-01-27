@@ -8,9 +8,9 @@ import pdb
 
 GRAVITY_ACCELERATION = 0.6
 
-def run_main_loop(lobby, event_loop):
+def run_main_loop(lobby, stop_event, event_loop):
     running = True
-    while running:
+    while not stop_event.is_set():
         # TODO: update player positions and broadcast new state
         update_players(lobby)
         asyncio.run_coroutine_threadsafe(broadcast_positions(lobby), event_loop)

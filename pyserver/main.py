@@ -17,6 +17,10 @@ warnings.filterwarnings("default", '', ResourceWarning)
 
 lobbies = {}
 
+class Lobby:
+    def __init__(self):
+        self.clients = {}
+        self.thread = None
 
 class Client:
     def __init__(self, websocket, player):
@@ -30,24 +34,30 @@ async def sockethandler(websocket, path):
     else:
         lobby_name, username = lobby_and_username
         if lobby_name not in lobbies:
-            lobbies[lobby_name] = {}
+            lobbies[lobby_name] = Lobby()
             print("Creating new lobby", lobby_name)
 
-        # TODO: add disconnect handling
-
         lobby = lobbies[lobby_name]
-        lobby[username] = Client(websocket, player.Player(username))
 
-        client = lobby[username]
+        if lobby.thread:
+            print("This lobby ({}) is already playing a game. {} cannot join now.".format(lobby_name, username))
+            return
+
+        lobby.clients[username] = Client(websocket, player.Player(username))
+        print("{} has joined {}".format(username, lobby_name))
+
+        client = lobby.clients[username]
+
+        thread_stop_event = threading.Event()
 
         async def send_to_others(message):
-            for client_name in lobby:
+            for client_name in lobby.clients:
                 if client_name != username:
-                    await lobby[client_name].websocket.send(message)
+                    await lobby.clients[client_name].websocket.send(message)
 
         async def broadcast(message):
-            for client_name in lobby:
-                await lobby[client_name].websocket.send(message)
+            for client_name in lobby.clients:
+                await lobby.clients[client_name].websocket.send(message)
 
         async def chat_handler(content):
             message_string = "({}) {}: {}".format(lobby_name, username, content)
@@ -55,9 +65,12 @@ async def sockethandler(websocket, path):
             await send_to_others("chat:" + message_string)
 
         async def game_start_handler(content):
-            t = threading.Thread(target=game.run_main_loop, args=(lobby, asyncio.get_event_loop()))
-            t.start()
-            await broadcast("start game:" + " ".join(lobby.keys()))
+            if not lobby.thread:
+                lobby.thread = threading.Thread(
+                    target = game.run_main_loop,
+                    args = (lobby.clients, thread_stop_event, asyncio.get_event_loop()))
+                lobby.thread.start()
+                await broadcast("start game:" + " ".join(lobby.clients.keys()))
 
         async def key_down_handler(content):
             if content == 'left':
@@ -82,15 +95,27 @@ async def sockethandler(websocket, path):
             "key up": key_up_handler
         }
 
-        while True:
-            message = await websocket.recv()
-            split_message = message.split(':', 1)
-            message_type = split_message[0]
-            message_content = split_message[1] if len(split_message) > 1 else ""
-            if message_type in message_handler:
-                await message_handler[message_type](message_content)
-            else:
-                print("Unknown message type:", message)
+        try:
+            while True:
+                message = await websocket.recv()
+                split_message = message.split(':', 1)
+                message_type = split_message[0]
+                message_content = split_message[1] if len(split_message) > 1 else ""
+                if message_type in message_handler:
+                    await message_handler[message_type](message_content)
+                else:
+                    print("Unknown message type:", message)
+        except websockets.exceptions.ConnectionClosed:
+            pass
+
+        print("({}) {} has disconnected".format(lobby_name, username))
+        del lobby.clients[username]
+        if not lobby.clients:
+            print("The last client disconnected from {}. Shutting down that lobby.".format(lobby_name))
+            if lobby.thread:
+                thread_stop_event.set()
+                lobby.thread.join()
+            del lobbies[lobby_name]
 
 asyncio.get_event_loop().run_until_complete(
     websockets.serve(sockethandler, 'localhost', 8765))
