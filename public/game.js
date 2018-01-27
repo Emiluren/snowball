@@ -25,7 +25,7 @@ $(document).ready(function () {
             name = contentsSplit[0];
             x = contentsSplit[1];
             y = contentsSplit[2];
-            updatePlayerPosition(name, 100, 100);
+            updatePlayerPosition(name, x, y);
         }
     }
 
