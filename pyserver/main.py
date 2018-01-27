@@ -20,6 +20,7 @@ lobbies = {}
 class Lobby:
     def __init__(self):
         self.clients = {}
+        self.snowballs = {}
         self.thread = None
 
 class Client:

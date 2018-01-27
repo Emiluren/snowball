@@ -7,6 +7,8 @@ import util
 import pdb
 
 GRAVITY_ACCELERATION = 0.6
+MAX_THROWING_FORCE = 10
+SNOWBALL_SPAWN_DISTANCE = 30;
 
 def run_main_loop(lobby, stop_event, event_loop):
     running = True
@@ -55,4 +57,23 @@ def update_players(lobby):
         player = lobby[client_name].player
         update_player(player, lobby)
 
+
+def update_snowballs(lobby):
+    pass
+
+
+def create_snowball_id(lobby):
+    if not lobby.snowballs:
+        return 0
+    return max(lobby.snowballs.keys()) + 1
+
+
+def create_snowball(lobby, pos, angle, force):
+    ball_id = create_snowball_id(lobby)
+    snowball = Snowball(ball_id)
+    direction = vec.from_direction(angle, 1)
+    velocity = vec.mul(direction, force*MAX_THROWING_FORCE)
+    snowball.position = vec.add(pos, vec.mul(direction, SNOWBALL_SPAWN_DISTANCE))
+    snowball.velocity = velocity
+    lobby.snowballs[ball_id] = snowball
 
