@@ -41,7 +41,16 @@ function initLevel() {
     mainPlayerSprite = game.add.sprite(
             mainPlayerPosition.x,
             mainPlayerPosition.y,
-            'snowman');
+        'snowman');
+
+    for (var i in playerList) {
+        var name = playerList[i];
+        if (name != mainPlayerName) {
+            players[name].sprite = game.add.sprite(0, 0, 'snowman');
+        } else {
+            players[name].sprite = mainPlayerSprite;
+        }
+    }
 }
 
 function updatePlayerPosition(name, x, y) {
@@ -61,8 +70,7 @@ function updatePlayerPosition(name, x, y) {
 function addPlayers(playerList) {
     for (var i in playerList) {
         var name = playerList[i];
-        var sprt = game.add.sprite(0, 0, 'snowman');
-        players[name] = {x: 0, y: 0, health: 0, sprite: sprt};
+        players[name] = {x: 0, y: 0, health: 0, sprite: null};
     }
 }
 

@@ -4,7 +4,6 @@ module ServerTypes where
 import Control.Lens
 import qualified Data.ByteString as B
 import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as Map
 import qualified Network.WebSockets as WS
 
 import Player

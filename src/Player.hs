@@ -1,18 +1,31 @@
+{-# LANGUAGE TemplateHaskell #-}
 module Player where
 
+import Control.Concurrent.STM.TChan
+import Control.Lens
 import Linear
-import Data.Queue.Instances
-
 
 data PlayerEvents = Jump | Throw (V2 Float)
 
 data Player = Player
-  { leftPressed :: Bool
-  , rightPressed :: Bool
-  , health :: Int
-  , position :: V2 Float
-  , events :: TChan PlayerEvents
+  { _playerLeftPressed :: Bool
+  , _playerRightPressed :: Bool
+  , _playerHealth :: Int
+  , _playerPosition :: V2 Float
+  , _playerEvents :: TChan PlayerEvents
   }
 
+newPlayer :: IO Player
+newPlayer = do
+  chan <- newTChanIO
+  return Player
+    { _playerLeftPressed = False
+    , _playerRightPressed = False
+    , _playerHealth = 100
+    , _playerPosition = V2 0 0
+    , _playerEvents = chan
+    }
+
+makeLenses ''Player
 
 
