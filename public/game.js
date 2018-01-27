@@ -4,14 +4,9 @@ function appendOutput(cls, text) {
 }
 
 var game;
-var map;
-var layer;
-// var cursors;
-
-var mainPlayer;
+var ws;
 
 $(document).ready(function () {
-    var ws;
 
     $('#username').focus();
 
@@ -22,12 +17,22 @@ $(document).ready(function () {
         "start game": function(messageContent) {
             var callbacks = { preload: preload, create: create, update: update };
             game = new Phaser.Game(800, 600, Phaser.AUTO, 'game-container', callbacks);
+            playerList = messageContent.split(' ');
+            addPlayers(playerList);
+        },
+        "position": function(messageContent) {
+            contentsSplit = messageContent.split(' ');
+            name = contentsSplit[0];
+            x = contentsSplit[1];
+            y = contentsSplit[2];
+            updatePlayerPosition(name, x, y);
         }
     }
 
     $('#login').submit(function () {
         var lobby = $('#lobby').val();
         var username = $('#username').val();
+        mainPlayerName = username;
         $('#login').css('display', 'none');
         $('#console').css('display', 'block');
 
@@ -75,23 +80,26 @@ $(document).ready(function () {
     });
 });
 
+function sendKeystroke(stroke, down) {
+    if (down) {
+        ws.send('key down:' + stroke);
+    } else {
+        ws.send('key up:' + stroke);
+    }
+}
+
+function sendJump() {
+    ws.send('jump');
+}
+
 function preload() {
     game.load.tilemap('snowballMap', 'assets/map.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('tileset', 'assets/tileset.png');
+    game.load.image('snowman', 'assets/snowman.png');
 }
 
 function create() {
-    game.stage.backgroundColor = '#909090';
-    
-    map = game.add.tilemap('snowballMap');
-    map.addTilesetImage('tileset', 'tileset');
-    
-    layer = map.createLayer('mapLayer');
-    layer.resizeWorld();
-
-    mainPlayer = game.add.sprite(400, 300, 'snowblock');
-
-    // cursors = game.input.keyboard.createCursorKeys();
+    initLevel();
     initKeyboard();
     initMouse();
 }

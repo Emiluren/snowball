@@ -22,34 +22,40 @@ function initMouse() {
 function onClick() {
     var x = game.input.activePointer.x;
     var y = game.input.activePointer.y;
-    mouseClicked(x, y);
+    if (game.input.activePointer.rightButton.isDown) {
+        mouseRightClicked(x, y);
+    }
 }
 
 function keyAPressed() {
-    console.log('A PRESSED');
+    sendKeystroke('left', true);
 }
 
 function keyAReleased() {
-    console.log('A RELEASED');
+    sendKeystroke('left', false);
 }
 
 function keyDPressed() {
-    console.log('D PRESSED');
+    sendKeystroke('right', true);
 }
 
 function keyDReleased() {
-    console.log('D RELEASED');
+    sendKeystroke('right', false);
 }
 
 function keySpacePressed() {
-    console.log('SPACE PRESSED');
+    sendJump();
 }
 
 function keySpaceReleased() {
     console.log('SPACE RELEASED');
 }
 
-function mouseClicked(x, y) {
+function mouseRightClicked(x, y) {
     console.log(x + ' ' + y);
+}
+
+function isLeftMouseButtonPressed() {
+    return game.input.activePointer.leftButton.isDown;
 }
 
