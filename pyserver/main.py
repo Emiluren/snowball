@@ -48,6 +48,7 @@ async def echo(websocket, path):
             await send_to_others("chat:" + message_string)
 
         async def game_start_handler(content):
+            threading.Thread(target=game.run_main_loop)
             await broadcast("start game:" + " ".join(lobby.keys()))
 
         async def key_down_handler(content):
