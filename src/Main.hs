@@ -5,10 +5,10 @@ import Control.Concurrent
 import qualified Control.Concurrent.STM as STM
 import Control.Exception (finally)
 import Control.Lens
-import Control.Monad (forever, forM_, unless, when)
+import Control.Monad (forever, unless, when)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BC
-import Data.Map.Strict ((!), (!?), Map)
+import Data.Map.Strict ((!), (!?))
 import qualified Data.Map.Strict as Map
 import Data.Monoid ((<>))
 import qualified Network.WebSockets as WS
@@ -20,7 +20,7 @@ import qualified Snap.Util.FileServe as Snap
 
 import qualified Game
 import NetworkUtils
-import Player (Player(..))
+import Player
 import ServerTypes
 
 app :: STM.TVar ServerState -> Snap ()
@@ -58,9 +58,9 @@ chatApp serverStateVar lobbyName username pending = do
   BC.putStrLn $ "(" <> lobbyName <> ") " <> username <> " has connected"
   conn <- WS.acceptRequest pending
 
-  let addClientToLobby =
+  let addClientToLobby player =
         -- TODO: add actual player init
-        Map.adjust (lobbyClients %~ Map.insert username (Client conn $ Player {})) lobbyName
+        Map.adjust (lobbyClients %~ Map.insert username (Client conn player)) lobbyName
 
       -- Remove the whole lobby if all clients leave
       lobbyWithClientRemoved lobby =
@@ -74,8 +74,9 @@ chatApp serverStateVar lobbyName username pending = do
 
       deleteClientFromLobby =
         Map.update lobbyWithClientRemoved lobbyName
-  
-  STM.atomically $ STM.modifyTVar' serverStateVar addClientToLobby
+
+  player <- newPlayer
+  STM.atomically $ STM.modifyTVar' serverStateVar $ addClientToLobby player
 
   let removeClient = do
         BC.putStrLn $ "(" <> lobbyName <> ") " <> username <> " has disconnected"
@@ -104,15 +105,39 @@ chatApp serverStateVar lobbyName username pending = do
                 lobby <- (! lobbyName) <$> STM.readTVar serverStateVar
                 if _lobbyGameStarted lobby
                   then return False
-                  else STM.modifyTVar' serverStateVar (Map.adjust (lobbyGameStarted .~ True) lobbyName) >> return True
+                  else do STM.modifyTVar' serverStateVar $
+                            at lobbyName . _Just . lobbyGameStarted .~ True
+                          return True
 
               when startNewGame $ do
                 lobby <- (! lobbyName) <$> STM.readTVarIO serverStateVar
+                let clientNames = B.intercalate " " $ Map.keys $ _lobbyClients lobby
+
+                BC.putStrLn $ "(" <> lobbyName <> ") " <> "Starting game with " <> clientNames
+                sendToEveryone serverStateVar lobbyName $ "start game:" <> clientNames
                 _ <- forkIO $ Game.runMainLoop serverStateVar lobbyName
-                forM_ (_lobbyClients lobby) $ \client ->
-                  let conn = _clientConnection client
-                      msg = "start game" :: B.ByteString
-                  in WS.sendTextData conn msg
+          )
+        , ( "key down"
+          , \keyName ->
+              if keyName == "left" then
+                STM.atomically $ STM.modifyTVar' serverStateVar $
+                  (at lobbyName)._Just.lobbyClients.(at username)._Just.clientPlayerData.playerLeftPressed .~ True
+              else if keyName == "right" then
+                STM.atomically $ STM.modifyTVar' serverStateVar $
+                  (at lobbyName)._Just.lobbyClients.(at username)._Just.clientPlayerData.playerRightPressed .~ True
+              else
+                BC.putStrLn $ "unknown key down: " <> keyName
+          )
+        , ( "key up"
+          , \keyName ->
+              if keyName == "left" then
+                STM.atomically $ STM.modifyTVar' serverStateVar $
+                  (at lobbyName)._Just.lobbyClients.(at username)._Just.clientPlayerData.playerLeftPressed .~ False
+              else if keyName == "right" then
+                STM.atomically $ STM.modifyTVar' serverStateVar $
+                  (at lobbyName)._Just.lobbyClients.(at username)._Just.clientPlayerData.playerRightPressed .~ False
+              else
+                BC.putStrLn $ "unknown key up: " <> keyName
           )
         ]
 
