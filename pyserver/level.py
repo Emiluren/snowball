@@ -3,6 +3,7 @@ import pdb
 
 JSON_MAP = '../public/assets/map.json'
 
+TILE_SIZE = 20
 PLAYER_WIDTH = 40
 PLAYER_HEIGHT = 60
 
@@ -45,8 +46,9 @@ def can_move_to(width, height, new_x, new_y, players={}):
 
     (int, int, int, int) -> (Player|None, bool)
     """
-    covered_tiles = map(lambda row: row[new_x:new_x+width], 
-                        tiles[new_y:new_y+height])
+    covered_tiles = map(lambda row: 
+                        row[round(new_x/TILE_SIZE):round((new_x+width)/TILE_SIZE)],
+                        tiles[round(new_y/TILE_SIZE):round((new_y+height)/TILE_SIZE)])
     
     for row in covered_tiles:
         if any(row):

@@ -86,8 +86,8 @@ function updatePlayerPosition(name, x, y) {
         mainPlayerPosition.y = y;
         mainPlayerSprite.x = x;
         mainPlayerSprite.y = y;
-        aimSprite.x = mainPlayerPosition.x + mainPlayerSprite.width/2;
-        aimSprite.y = mainPlayerPosition.y + 5;
+        aimSprite.x = mainPlayerSprite.centerX; //+ mainPlayerSprite.width/2;
+        aimSprite.y = mainPlayerSprite.centerY;
         aimSprite.angle = currentAngle * 180/Math.PI;
     } else {
         var p = players[name];
