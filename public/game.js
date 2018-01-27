@@ -6,6 +6,9 @@ function appendOutput(cls, text) {
 var game;
 var map;
 var layer;
+// var cursors;
+
+var mainPlayer;
 
 $(document).ready(function () {
     var ws;
@@ -85,7 +88,14 @@ function create() {
     
     layer = map.createLayer('mapLayer');
     layer.resizeWorld();
+
+    mainPlayer = game.add.sprite(400, 300, 'snowblock');
+
+    // cursors = game.input.keyboard.createCursorKeys();
+    initKeyboard();
+    initMouse();
 }
 
 function update() {
+    levelUpdate();
 }

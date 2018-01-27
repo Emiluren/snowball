@@ -1,10 +1,11 @@
-{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Concurrent
 import qualified Control.Concurrent.STM as STM
 import Control.Exception (finally)
 import Control.Lens
-import Control.Monad (forever, forM_, unless)
+import Control.Monad (forever, forM_, unless, when)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Char8 as BC
 import Data.Map.Strict ((!), (!?), Map)
@@ -17,19 +18,10 @@ import qualified Snap.Core as Snap
 import qualified Snap.Http.Server as Snap
 import qualified Snap.Util.FileServe as Snap
 
-data LobbyState = LobbyState
-  { _lobbyClients :: Map B.ByteString Client
-  }
-
-data Client = Client
-  { _clientConnection :: WS.Connection
-  }
-
-makeLenses ''LobbyState
-makeLenses ''Client
-
-type ServerState = Map B.ByteString LobbyState
-
+import qualified Game
+import NetworkUtils
+import Player (Player(..))
+import ServerTypes
 
 app :: STM.TVar ServerState -> Snap ()
 app serverState = Snap.route
@@ -53,21 +45,22 @@ splitMessage msg = BC.drop 1 <$> BC.span (/= ':') msg
 chatApp :: STM.TVar ServerState -> B.ByteString -> B.ByteString -> WS.ServerApp
 chatApp serverStateVar lobbyName username pending = do
   -- Create a new lobby if it doesn't exist
-  alreadyExisted <- STM.atomically $ do
+  createdNewLobby <- STM.atomically $ do
     serverState <- STM.readTVar serverStateVar
     let alreadyExisted = Map.member lobbyName serverState
     unless alreadyExisted $ do
       STM.modifyTVar' serverStateVar $
-        Map.insert lobbyName $ LobbyState Map.empty
-    return alreadyExisted
+        Map.insert lobbyName $ LobbyState Map.empty False
+    return $ not alreadyExisted
 
-  unless alreadyExisted $ BC.putStrLn $ "Creating new lobby " <> lobbyName
+  when createdNewLobby $ BC.putStrLn $ "Creating new lobby " <> lobbyName
 
   BC.putStrLn $ "(" <> lobbyName <> ") " <> username <> " has connected"
   conn <- WS.acceptRequest pending
 
   let addClientToLobby =
-        Map.adjust (lobbyClients %~ Map.insert username (Client conn)) lobbyName
+        -- TODO: add actual player init
+        Map.adjust (lobbyClients %~ Map.insert username (Client conn $ Player {})) lobbyName
 
       -- Remove the whole lobby if all clients leave
       lobbyWithClientRemoved lobby =
@@ -84,37 +77,45 @@ chatApp serverStateVar lobbyName username pending = do
   
   STM.atomically $ STM.modifyTVar' serverStateVar addClientToLobby
 
-  let sendToEveryoneElse str = do
-        lobby <- (! lobbyName) <$> STM.readTVarIO serverStateVar
-        forM_ (Map.delete username $ _lobbyClients lobby) $ \client ->
-          WS.sendTextData (_clientConnection client) str
-
-      removeClient = do
+  let removeClient = do
         BC.putStrLn $ "(" <> lobbyName <> ") " <> username <> " has disconnected"
-        sendToEveryoneElse $ "disconnected: " <> username
+        sendToEveryoneElse serverStateVar lobbyName username $
+          "disconnected: " <> username
         STM.atomically $ STM.modifyTVar' serverStateVar deleteClientFromLobby
 
-  sendToEveryoneElse $ username <> " has connected"
+  sendToEveryoneElse serverStateVar lobbyName username $
+    username <> " has connected"
 
   let messageDispatcher = Map.fromList
         [ ( "chat"
           , \messageContent -> do
               BC.putStrLn $
                 "(" <> lobbyName <> ") " <> username <> ": " <> messageContent
-              sendToEveryoneElse $ "chat:" <> username <> ": " <> messageContent
+              sendToEveryoneElse serverStateVar lobbyName username $
+                "chat:" <> username <> ": " <> messageContent
           )
         , ( "start game"
           , \_ -> do
               BC.putStrLn $
                 "(" <> lobbyName <> ") " <> username <> " clicked on start game!"
-              lobby <- (! lobbyName) <$> STM.readTVarIO serverStateVar
-              forM_ (_lobbyClients lobby) $ \client ->
-                WS.sendTextData (_clientConnection client) ("start game" :: B.ByteString)
+
+              -- Start a new server main loop thread if there is not already one
+              startNewGame <- STM.atomically $ do
+                lobby <- (! lobbyName) <$> STM.readTVar serverStateVar
+                if _lobbyGameStarted lobby
+                  then return False
+                  else STM.modifyTVar' serverStateVar (Map.adjust (lobbyGameStarted .~ True) lobbyName) >> return True
+
+              when startNewGame $ do
+                lobby <- (! lobbyName) <$> STM.readTVarIO serverStateVar
+                _ <- forkIO $ Game.runMainLoop serverStateVar lobbyName
+                forM_ (_lobbyClients lobby) $ \client ->
+                  let conn = _clientConnection client
+                      msg = "start game" :: B.ByteString
+                  in WS.sendTextData conn msg
           )
         ]
 
-  -- Any time a user sends a message,
-  -- broadcast it to the other people in the lobby
   flip finally removeClient $ forever $ do
     message <- WS.receiveData conn
     let (messageType, messageContent) = splitMessage message

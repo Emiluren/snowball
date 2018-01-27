@@ -11,7 +11,7 @@ data Player = Player
   , rightPressed :: Bool
   , health :: Int
   , position :: V2 Float
-  , events :: Chan PlayerEvents
+  , events :: TChan PlayerEvents
   }
 
 
