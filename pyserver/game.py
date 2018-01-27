@@ -6,7 +6,9 @@ import level
 import util
 import pdb
 
-GRAVITY_ACCELERATION = 0.6
+RUN_ACCELERATION = 1.0
+GRAVITY_ACCELERATION = 1.3
+PLAYER_MAX_SPEED = 10
 
 def run_main_loop(lobby, stop_event, event_loop):
     running = True
@@ -41,13 +43,19 @@ def update_player(player, lobby):
         player.velocity = (vx, 0);
 
     px, py = player.position
-    dx = (player.left_pressed*(-1) + player.right_pressed) * 10
-
-    _, can_move = level.can_move_to(level.PLAYER_WIDTH, 
-                                    level.PLAYER_HEIGHT, 
-                                    px + dx, py)
+    vx, vy = player.velocity
+    _, can_move = level.can_move_to(level.PLAYER_WIDTH,
+                                    level.PLAYER_HEIGHT,
+                                    round(px + vx), py)
     if can_move:
-        player.position = (px + dx, py)
+        dx = (player.left_pressed*(-1) + player.right_pressed)
+        new_vx = vx * 0.9 + dx
+        if new_vx > PLAYER_MAX_SPEED:
+            new_vx = PLAYER_MAX_SPEED * new_vx / new_vx
+        player.velocity = (new_vx, vy)
+        player.position = (round(px + vx), py)
+    else:
+        player.velocity = (0, vy)
 
 
 def update_players(lobby):
