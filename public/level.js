@@ -1,5 +1,6 @@
 
 const AIM_POWER_SPEED = 0.1;
+const SNOWBALL_COLLECT_TIME = 2000;
 
 var time;
 
@@ -20,6 +21,9 @@ var mainPlayerHealth;
 var mainPlayerSprite;
 var mainPlayerName;
 
+var numSnowballs;
+var formingSnowball;
+
 var aiming;
 var currentForce;
 var currentAngle;
@@ -29,6 +33,8 @@ function initLevel() {
     aiming = false;
     currentForce = 0;
     aimCounter = 0;
+    numSnowballs = 0;
+    formingSnowball = false;
 
     time = new Date().getTime();
     game.stage.backgroundColor = '#909090';
@@ -78,6 +84,17 @@ function getAngle(x1, y1, x2, y2) {
     return -Math.atan2((y2 - y1),(x2 - x1));
 }
 
+function handleSnowballForming() {
+    if (isFormSnowballPressed()) {
+        formingSnowball = true;
+    } else {
+        if (formingSnowball) {
+            sendNewSnowball();
+        }
+        formingSnowball = false;
+    }
+}
+
 function levelUpdate() {
     var newTime = new Date().getTime();
     var deltaTime = (newTime - time)/30;
@@ -100,5 +117,6 @@ function levelUpdate() {
         aiming = false;
         aimCounter = 0;
     }
+    handleSnowballForming();
 }
 
