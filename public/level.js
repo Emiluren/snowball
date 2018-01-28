@@ -1,6 +1,6 @@
 
 const AIM_POWER_SPEED = 0.1;
-const SNOWBALL_COLLECT_TIME = 500;
+const SNOWBALL_COLLECT_TIME = 1000;
 const MAX_SNOWBALLS = 5;
 
 var time;
@@ -126,9 +126,14 @@ function updatePlayerPosition(name, x, y) {
         mainPlayerPosition.y = y;
         mainPlayerSprite.x = x;
         mainPlayerSprite.y = y;
-        aimSprite.x = mainPlayerSprite.centerX; //+ mainPlayerSprite.width/2;
-        aimSprite.y = mainPlayerSprite.centerY;
-        aimSprite.angle = currentAngle * 180/Math.PI;
+        if (aiming) {
+            aimSprite.visible = true;
+            aimSprite.x = mainPlayerSprite.centerX; //+ mainPlayerSprite.width/2;
+            aimSprite.y = mainPlayerSprite.centerY;
+            aimSprite.angle = currentAngle * 180/Math.PI;
+        } else {
+            aimSprite.visible = false;
+        }
     } else {
         var p = players[name];
         p.x = x;
@@ -175,8 +180,12 @@ function updateHealthBar () {
 }
 
 function updatePowerBar() {
-    powerBar.scale.x = currentForce * 100;
-    powerBar.tint = rgb2hex(255*currentForce, 50*(1 - currentForce) + 205, 0);
+    if (aiming) {
+        powerBar.scale.x = currentForce * 100;
+        powerBar.tint = rgb2hex(255*currentForce, 50*(1 - currentForce) + 205, 0);
+    } else {
+        powerBar.scale.x = 0;
+    }
 }
 
 function rgb2hex(red, green, blue) {
@@ -282,15 +291,19 @@ function initText() {
     
     gameOverText = game.add.bitmapText(0, 0,
             'carrier_command',
-            '', 30);
-    gameOverText.x = game.width/2 - 200;
-    gameOverText.y = game.height/2;
+            '', 70);
+    gameOverText.text = "You ded";
+    gameOverText.tint = 0xFF1100;
+    gameOverText.x = game.width/2 - gameOverText.width/2;
+    gameOverText.y = game.height/2 - gameOverText.height/2;
+    gameOverText.visible = false;
 }
 
 function checkIfGameOver() {
     if (mainPlayerHealth == 0) {
         gameOver = true;
-        gameOverText.text = "You ded";
+        gameOverText.visible = true;
+        game.world.bringToTop(gameOverText);
     } else {
         gameOver = false;
     }
@@ -302,8 +315,9 @@ function levelUpdate() {
     time = newTime;
     updateHealthBar();
     checkIfGameOver();
+    updatePowerBar();
     
-    if (isLeftMouseButtonPressed()) {
+    if (isLeftMouseButtonPressed() && numSnowballs > 0) {
         aiming = true;
         currentForce = (-Math.cos(
                 aimCounter*AIM_POWER_SPEED) + 1)/2;
@@ -311,7 +325,6 @@ function levelUpdate() {
                     mainPlayerPosition.y, 
                     getMouseX(), getMouseY());
                     
-        updatePowerBar();
         aimCounter++;
     } else {
         if (aiming) {
