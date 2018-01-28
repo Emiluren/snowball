@@ -45,13 +45,13 @@ $(document).ready(function () {
                 updateSnowball(id, x, y);
             }
         },
-        // "health": function(messageContent) {
-        //     var contentsSplit = messageContent.split(' ');
-        //     var name = contentsSplit[0];
-        //     var health = contentsSplit[1];
-        //     
-        //     updateHealth(name, health);
-        // },
+        "health": function(messageContent) {
+            var contentsSplit = messageContent.split(' ');
+            var name = contentsSplit[0];
+            var health = contentsSplit[1];
+            
+            updateHealth(name, health);
+        },
         "delete ball": function (messageContent) {
             var id = messageContent;
             
@@ -173,6 +173,7 @@ function preload() {
     game.load.image('powerbar', 'assets/powerbar.png');
     game.load.image('snowball', 'assets/snowball.png');
     game.load.image('healthbar', 'assets/healthbar.png');
+    game.load.image('healthbar-main', 'assets/healthbar-main.png');
     
     game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
 
@@ -198,6 +199,8 @@ function preload() {
     game.load.audio('death1', 'assets/audio/death1.ogg');
     game.load.audio('death2', 'assets/audio/death2.ogg');
     game.load.audio('death3', 'assets/audio/death3.ogg');
+
+    game.stage.disableVisibilityChange = true;
 }
 
 function create() {
