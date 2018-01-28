@@ -34,6 +34,10 @@ def run_main_loop(lobby, stop_event, event_loop):
                     lobby.clients,
                     changed_healths), event_loop)
 
+            for player in changed_healths:
+                if player.health == 0:
+                    player.position = -1000, -1000
+
         if destroyed_snowballs:
             asyncio.run_coroutine_threadsafe(
                 broadcast_deleted_snowballs(
