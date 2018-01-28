@@ -174,6 +174,7 @@ function preload() {
     game.load.image('snowball', 'assets/snowball.png');
     game.load.image('healthbar', 'assets/healthbar.png');
     game.load.image('healthbar-main', 'assets/healthbar-main.png');
+    game.load.image('healthbar-red', 'assets/healthbar-red.png');
     
     game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
 

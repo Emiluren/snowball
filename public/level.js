@@ -25,6 +25,7 @@ var mainPlayerHealth;
 var mainPlayerSprite;
 var mainPlayerName;
 var mainPlayerHealthbar;
+var mainPlayerRedBar;
 
 var numSnowballs;
 var formingSnowball;
@@ -49,7 +50,10 @@ var gameOverText;
 * name -> sprite
 */
 var playerHealthBars = {};
+var playerRedBars = {};
 var healthbar; //healthbar sprite
+var redbar; // red healthbar underneath healthbar
+
 
 function initLevel() {
     gameOver = false;
@@ -151,14 +155,25 @@ function updateHealth(name, health) {
 function initHealthBars() {
     // my healthbar
     mainPlayerhealthbar = game.add.sprite(game.width/2, 20, 'healthbar-main');
+    
     // center the healthbar a little more
     mainPlayerhealthbar.x -= mainPlayerhealthbar.width / 2;
+    
+    mainPlayerRedBar = game.add.sprite(
+        game.width/2 - mainPlayerhealthbar.width/2, 
+        20, 'healthbar-red'
+    );
+    mainPlayerRedBar.scale.x *= 3;
+    mainPlayerRedBar.moveDown();
     
     // init the healthbars for all the enemies
     for (var name in playerNames) {
         if (playerNames[name] !== mainPlayerName) {
             healthbar = game.add.sprite(100, 100, 'healthbar');
+            redbar = game.add.sprite(100,100, 'healthbar-red');
             playerHealthBars[playerNames[name]] = healthbar;
+            playerRedBars[playerNames[name]] = redbar;
+            playerRedBars[playerNames[name]].moveDown();
         }
     }
 }
@@ -172,6 +187,10 @@ function updateHealthBar () {
         playerHealthBars[player].x = players[player].sprite.centerX - 13;
         playerHealthBars[player].y = players[player].sprite.centerY - 40;
         playerHealthBars[player].scale.x = players[player].health / 100;
+        
+        // healthbar for enemies
+        playerRedBars[player].x = players[player].sprite.centerX - 13;
+        playerRedBars[player].y = players[player].sprite.centerY - 40;
     }
 }
 
