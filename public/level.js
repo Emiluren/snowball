@@ -17,12 +17,15 @@ var players = {};
 
 // List of all the players' names
 var playerNames = [];
+// name -> bitmapText
+var nameTags = {};
 
 var mainPlayerPosition;
 var mainPlayerHealth;
 var mainPlayerSprite;
 var mainPlayerName;
 var mainPlayerHealthbar;
+var mainPlayerRedBar;
 
 var numSnowballs;
 var formingSnowball;
@@ -47,7 +50,10 @@ var gameOverText;
 * name -> sprite
 */
 var playerHealthBars = {};
+var playerRedBars = {};
 var healthbar; //healthbar sprite
+var redbar; // red healthbar underneath healthbar
+
 
 function initLevel() {
     gameOver = false;
@@ -60,10 +66,9 @@ function initLevel() {
     snowballCollectionPercentage = 0;
     initSnowballs();
     initHealthBars();
-    initText();
 
     time = new Date().getTime();
-    game.stage.backgroundColor = '#909090';
+    game.stage.backgroundColor = '#AAAAFF';
     
     map = game.add.tilemap('snowballMap');
     map.addTilesetImage('tileset', 'tileset');
@@ -155,14 +160,25 @@ function updateHealth(name, health) {
 function initHealthBars() {
     // my healthbar
     mainPlayerhealthbar = game.add.sprite(game.width/2, 20, 'healthbar-main');
+    
     // center the healthbar a little more
     mainPlayerhealthbar.x -= mainPlayerhealthbar.width / 2;
+    
+    mainPlayerRedBar = game.add.sprite(
+        game.width/2 - mainPlayerhealthbar.width/2, 
+        20, 'healthbar-red'
+    );
+    mainPlayerRedBar.scale.x *= 3;
+    mainPlayerRedBar.moveDown();
     
     // init the healthbars for all the enemies
     for (var name in playerNames) {
         if (playerNames[name] !== mainPlayerName) {
             healthbar = game.add.sprite(100, 100, 'healthbar');
+            redbar = game.add.sprite(100,100, 'healthbar-red');
             playerHealthBars[playerNames[name]] = healthbar;
+            playerRedBars[playerNames[name]] = redbar;
+            playerRedBars[playerNames[name]].moveDown();
         }
     }
 }
@@ -176,6 +192,10 @@ function updateHealthBar () {
         playerHealthBars[player].x = players[player].sprite.centerX - 13;
         playerHealthBars[player].y = players[player].sprite.centerY - 40;
         playerHealthBars[player].scale.x = players[player].health / 100;
+        
+        // healthbar for enemies
+        playerRedBars[player].x = players[player].sprite.centerX - 13;
+        playerRedBars[player].y = players[player].sprite.centerY - 40;
     }
 }
 
@@ -288,7 +308,7 @@ function initText() {
             snowballsText.x, snowballsText.y + 30,
             'carrier_command',
             '', 10);
-    
+
     gameOverText = game.add.bitmapText(0, 0,
             'carrier_command',
             '', 70);
@@ -297,6 +317,17 @@ function initText() {
     gameOverText.x = game.width/2 - gameOverText.width/2;
     gameOverText.y = game.height/2 - gameOverText.height/2;
     gameOverText.visible = false;
+    for (var player in players) {
+        var nameTag = game.add.bitmapText(0,0, 'carrier_command', player, 8);
+        nameTags[player] = nameTag;
+    }
+}
+
+function updateNameTags() {
+    for (var name in nameTags) {
+        nameTags[name].x = players[name].sprite.centerX - nameTags[name].width/2;
+        nameTags[name].y = players[name].sprite.centerY - 50;
+    }
 }
 
 function checkIfGameOver() {
@@ -314,6 +345,7 @@ function levelUpdate() {
     var deltaTime = (newTime - time)/30;
     time = newTime;
     updateHealthBar();
+    updateNameTags();
     checkIfGameOver();
     updatePowerBar();
     

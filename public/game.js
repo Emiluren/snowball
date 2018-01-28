@@ -70,7 +70,7 @@ $(document).ready(function () {
         $('#login').css('display', 'none');
         $('#console').css('display', 'block');
 
-        ws = new WebSocket("ws://localhost:8765/" + lobby + '/' + username);
+        ws = new WebSocket("ws://" + location.hostname + ":30000/" + lobby + '/' + username);
         appendOutput('status', 'Opening WebSockets connection...\n');
 
         ws.onerror = function(event) {
@@ -174,6 +174,7 @@ function preload() {
     game.load.image('snowball', 'assets/snowball.png');
     game.load.image('healthbar', 'assets/healthbar.png');
     game.load.image('healthbar-main', 'assets/healthbar-main.png');
+    game.load.image('healthbar-red', 'assets/healthbar-red.png');
     
     game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
 
@@ -208,6 +209,7 @@ function create() {
     initLevel();
     initKeyboard();
     initMouse();
+    initText();
 }
 
 function update() {
