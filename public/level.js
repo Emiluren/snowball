@@ -288,7 +288,6 @@ function initText() {
     gameOverText.y = game.height/2;
             
     for (var player in players) {
-        console.log('nametag created for', player);
         var nameTag = game.add.bitmapText(0,0, 'carrier_command', player, 8);
         nameTags[player] = nameTag;
     }
@@ -296,7 +295,6 @@ function initText() {
 
 function updateNameTags() {
     for (var name in nameTags) {
-        console.log('nametag updated for', name);
         nameTags[name].x = players[name].sprite.centerX - nameTags[name].width/2;
         nameTags[name].y = players[name].sprite.centerY - 50;
     }
