@@ -39,13 +39,13 @@ $(document).ready(function () {
             }
             updateSnowballs(serverBalls);
         },
-        "health": function(messageContent) {
-            var contentsSplit = messageContent.split(' ');
-            var name = contentsSplit[0];
-            var health = contentsSplit[1];
-            
-            updateHealthBar(name, health);
-        }
+        // "health": function(messageContent) {
+        //     var contentsSplit = messageContent.split(' ');
+        //     var name = contentsSplit[0];
+        //     var health = contentsSplit[1];
+        //     
+        //     updateHealth(name, health);
+        // }
     }
 
     $('#login').submit(function () {

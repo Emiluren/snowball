@@ -38,6 +38,12 @@ var snowball;
 var snowballs = [];
 var thrownSnowballs = {};
 
+/*
+* name -> sprite
+*/
+var playerHealthBars = {};
+var healthbar; //healthbar sprite
+
 function initLevel() {
     aiming = false;
     currentForce = 0;
@@ -47,6 +53,7 @@ function initLevel() {
     snowballCollectionStartTime = 0;
     snowballCollectionPercentage = 0;
     initSnowballs();
+    initHealthBars();
     initText();
 
     time = new Date().getTime();
@@ -99,13 +106,23 @@ function updatePlayerPosition(name, x, y) {
     }
 }
 
-function updateHealthBar(name, health) {
+function updateHealth(name, health) {
     players[name].health = health;
 }
 
-function displayHealthBars () {
-    for (var player in players) {
-        var healthbar = 0;
+function initHealthBars() {
+    for (var name in playerNames) {
+        healthbar = game.add.sprite(100, 100, 'healthbar');
+        playerHealthBars[playerNames[name]] = healthbar;
+    }
+}
+
+function updateHealthBar () {
+    for (var player in playerHealthBars) {
+        console.log('name;', player, 'players[player];', players[player]);
+        playerHealthBars[player].x = mainPlayerSprite.centerX - 13;
+        playerHealthBars[player].y = mainPlayerSprite.centerY - 40;
+        playerHealthBars[player].scale.x = players[player].health / 100;
     }
 }
 
@@ -209,6 +226,7 @@ function levelUpdate() {
     var newTime = getCurrentTime();
     var deltaTime = (newTime - time)/30;
     time = newTime;
+    updateHealthBar();
     
     if (isLeftMouseButtonPressed()) {
         aiming = true;
