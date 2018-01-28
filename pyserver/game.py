@@ -45,7 +45,7 @@ def run_main_loop(lobby, stop_event, event_loop):
 async def broadcast_deleted_snowballs(clients, deleted_snowballs):
     for ball_id in deleted_snowballs:
         await util.broadcast(clients, 
-                             'deleted ball:' + str(ball_id))
+                             'delete ball:' + str(ball_id))
 
 async def broadcast_positions(clients):
     for username in clients:
