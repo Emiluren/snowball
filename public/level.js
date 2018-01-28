@@ -165,32 +165,21 @@ function decrementSnowballs() {
     numSnowballs--;
 }
 
-function updateSnowballs(serverBalls) {
-    // for every snowball stored on the server
-    for (var serverBall in serverBalls) {
-        // exists on server, exists on client
-        if (thrownSnowballs[serverBall] !== undefined) {
-            thrownSnowballs[serverBall].x = serverBalls[serverBall].x;
-            thrownSnowballs[serverBall].y = serverBalls[serverBall].y;
-            console.log("UPDATING");
-        }
-        // exists on server, does not exist on client
-        else {
-            console.log("NEW");
-            var x = serverBalls[serverBall].x;
-            var y = serverBalls[serverBall].y;
-            var id = serverBalls[serverBall].id;
-            var snowballSprite = game.add.sprite(x, y, 'snowball');
-            thrownSnowballs[id] = snowballSprite;
-        }
+function updateSnowball(id, x, y) {
+    if (thrownSnowballs[id] !== undefined) {
+        thrownSnowballs[id].x = x;
+        thrownSnowballs[id].y = y;
     }
-    // for every snowball stored on the client
-    for (var clientBall in thrownSnowballs) {
-        // exists on client, does not exists on server
-        if (serverBalls[clientBall] === undefined) {
-            thrownSnowballs[clientBall].destroy();
-            delete thrownSnowballs[clientBall];
-        }
+    else {
+        var snowballSprite = game.add.sprite(x, y, 'snowball');
+        thrownSnowballs[id] = snowballSprite;
+    }
+}
+
+function deleteSnowball(id) {
+    if (thrownSnowballs[id] !== undefined) {
+        thrownSnowballs[id].destroy();
+        delete thrownSnowballs[id];
     }
 }
 
@@ -232,7 +221,7 @@ function levelUpdate() {
     var newTime = getCurrentTime();
     var deltaTime = (newTime - time)/30;
     time = newTime;
-    updateHealthBar();
+    // updateHealthBar();
     
     if (isLeftMouseButtonPressed()) {
         aiming = true;

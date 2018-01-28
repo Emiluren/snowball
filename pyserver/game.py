@@ -18,15 +18,34 @@ PLAYER_MAX_SPEED = 10
 def run_main_loop(lobby, stop_event, event_loop):
     running = True
     while not stop_event.is_set():
-        # TODO: update player positions and broadcast new state
         update_players(lobby.clients)
-        changed_healths = update_snowballs(lobby)
+        changed_healths, destroyed_snowballs = \
+            update_snowballs(lobby)
 
-        asyncio.run_coroutine_threadsafe(
-            broadcast_snowballs(lobby), event_loop)
+        if changed_healths:
+            asyncio.run_coroutine_threadsafe(
+                broadcast_health(
+                    lobby.clients,
+                    changed_healths), event_loop)
+
+        if destroyed_snowballs:
+            asyncio.run_coroutine_threadsafe(
+                broadcast_deleted_snowballs(
+                    lobby.clients,
+                    destroyed_snowballs), event_loop)
+
+        if lobby.has_snowballs():
+            asyncio.run_coroutine_threadsafe(
+                broadcast_snowballs(lobby), event_loop)
 
         asyncio.run_coroutine_threadsafe(broadcast_positions(lobby.clients), event_loop)
         time.sleep(1/30)
+
+
+async def broadcast_deleted_snowballs(clients, deleted_snowballs):
+    for ball_id in deleted_snowballs:
+        await util.broadcast(clients, 
+                             'delete ball:' + str(ball_id))
 
 async def broadcast_positions(clients):
     for username in clients:
@@ -49,6 +68,7 @@ async def broadcast_health(lobby, changed_healths):
     for name, health in changed_healths:
         await util.broadcast(lobby, 
                              message + name + ' ' + str(health))
+        print(message + name + ' ' + str(health))
 
 
 def other_players(player, clients):
@@ -84,7 +104,7 @@ def update_snowballs(lobby):
     lobby.snowballs = {id: v 
                        for id, v in lobby.snowballs.items()
                       if id not in destroyed_snowballs}
-    return changed_healths
+    return changed_healths, destroyed_snowballs
 
 
 def update_player(player, clients):

@@ -28,17 +28,14 @@ $(document).ready(function () {
             updatePlayerPosition(name, x, y);
         },
         "snowballs": function(messageContent) {
-            var serverBalls = {};
             var contentsSplit = messageContent.split(';');
             for (var i in contentsSplit) {
-                var snowball = contentsSplit[i];
-                var data = snowball.split(' ');
+                var data = contentsSplit[i].split(' ');
                 var id = data[0];
                 var x = data[1];
                 var y = data[2];
-                serverBalls[id] = {'x':x, 'y':y};
+                updateSnowball(id, x, y);
             }
-            updateSnowballs(serverBalls);
         },
         // "health": function(messageContent) {
         //     var contentsSplit = messageContent.split(' ');
@@ -46,7 +43,12 @@ $(document).ready(function () {
         //     var health = contentsSplit[1];
         //     
         //     updateHealth(name, health);
-        // }
+        // },
+        "delete ball": function (messageContent) {
+            var id = messageContent;
+            
+            deleteSnowball(id);
+        }
     }
 
     $('#login').submit(function () {

@@ -23,6 +23,9 @@ class Lobby:
         self.snowballs = {}
         self.thread = None
 
+    def has_snowballs(self):
+        return bool(self.snowballs)
+
 class Client:
     def __init__(self, websocket, player):
         self.websocket = websocket
