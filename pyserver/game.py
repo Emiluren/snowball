@@ -55,9 +55,11 @@ async def broadcast_deleted_snowballs(clients, deleted_snowballs):
 
 async def broadcast_positions(clients):
     for username in clients:
-        x, y = clients[username].player.position
-        await util.broadcast(clients,
-            'position:{} {} {}'.format(username, x, y))
+        player = clients[username]
+        if player.health > 0:
+            x, y = player.position
+            await util.broadcast(clients,
+                'position:{} {} {}'.format(username, x, y))
 
 
 async def broadcast_snowballs(lobby):
@@ -94,16 +96,16 @@ async def play_throw_sound(lobby):
 
 async def jump(client):
     vx, vy = client.player.velocity
-    if client.player.on_ground:
+    if client.player.health > 0 and client.player.on_ground:
         client.player.velocity = vx, vy - 20
         await send_audio_to_user(client, JUMP_AUDIO)
 
 
-def other_players(player, clients):
-    return {p: v for p, v in clients.items() if p != player.name}
+#def other_players(player, clients):
+#    return {p: v for p, v in clients.items() if p != player.name}
 
-def all_players(clients):
-    return {p: v.player for p, v in clients.items()}
+def all_living_players(clients):
+    return {p: v.player for p, v in clients.items() if p.health > 0}
 
 
 def update_snowballs(lobby):
@@ -115,10 +117,12 @@ def update_snowballs(lobby):
 
         new_pos = vec.add(snowball.position, new_vel)
         new_x, new_y = new_pos
-        hit_object, can_move = level.can_move_to(SNOWBALL_SIZE,
-                                       SNOWBALL_SIZE,
-                                      round(new_x), round(new_y),
-                                      all_players(lobby.clients))
+        living_players = all_living_players(lobby.clients)
+        hit_object, can_move = level.can_move_to(
+            SNOWBALL_SIZE,
+            SNOWBALL_SIZE,
+            round(new_x), round(new_y),
+            living_players)
         if can_move:
             snowball.velocity = new_vel
             snowball.position = new_pos
@@ -175,7 +179,8 @@ def update_player(player, clients):
 def update_players(clients):
     for client_name in clients:
         player = clients[client_name].player
-        update_player(player, clients)
+        if player.health > 0:
+            update_player(player, clients)
 
 
 def create_snowball_id(lobby):
