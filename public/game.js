@@ -211,5 +211,7 @@ function create() {
 }
 
 function update() {
-    levelUpdate();
+    if (!gameOver) {
+        levelUpdate();
+    }
 }
