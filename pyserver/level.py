@@ -39,9 +39,7 @@ def init_level():
 
 
 def overlaps(a1, a2, b1, b2):
-    return max(a1, a2) <= min(b1, b2) or \
-           max(b1, b2) <= min(a1, a2)
-
+    return max(a1, b1) <= min(a2, b2)
 
 def outside_screen(width, height, new_x, new_y):
     return (new_x < 0 or
