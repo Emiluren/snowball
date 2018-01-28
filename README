@@ -1,0 +1,18 @@
+# To play the game first start a web server in public/. For example using python3:
+
+cd public
+python3 -m http.server
+
+# Make sure you have the python websockets library:
+
+sudo pip3 install websockets
+
+# Go into pyserver and start the actual game server:
+
+cp pyserver
+python3 main.py
+
+# Now that the server is running you can open the address of the web server you started
+# in a web browser (for the python web server above this would be http://localhost:8000)
+
+# Have fun :)
