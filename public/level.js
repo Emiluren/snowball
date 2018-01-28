@@ -232,7 +232,7 @@ function levelUpdate() {
     var newTime = getCurrentTime();
     var deltaTime = (newTime - time)/30;
     time = newTime;
-    updateHealthBar();
+    // updateHealthBar();
     
     if (isLeftMouseButtonPressed()) {
         aiming = true;
