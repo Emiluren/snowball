@@ -70,7 +70,7 @@ $(document).ready(function () {
         $('#login').css('display', 'none');
         $('#console').css('display', 'block');
 
-        ws = new WebSocket("ws://localhost:8765/" + lobby + '/' + username);
+        ws = new WebSocket("ws://" + location.hostname + ":30000/" + lobby + '/' + username);
         appendOutput('status', 'Opening WebSockets connection...\n');
 
         ws.onerror = function(event) {
