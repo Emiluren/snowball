@@ -17,6 +17,8 @@ var players = {};
 
 // List of all the players' names
 var playerNames = [];
+// name -> bitmapText
+var nameTags = {};
 
 var mainPlayerPosition;
 var mainPlayerHealth;
@@ -60,7 +62,6 @@ function initLevel() {
     snowballCollectionPercentage = 0;
     initSnowballs();
     initHealthBars();
-    initText();
 
     time = new Date().getTime();
     game.stage.backgroundColor = '#AAAAFF';
@@ -279,12 +280,24 @@ function initText() {
             snowballsText.x, snowballsText.y + 30,
             'carrier_command',
             '', 10);
-    
+
     gameOverText = game.add.bitmapText(0, 0,
             'carrier_command',
             '', 30);
     gameOverText.x = game.width/2 - 200;
     gameOverText.y = game.height/2;
+            
+    for (var player in players) {
+        var nameTag = game.add.bitmapText(0,0, 'carrier_command', player, 8);
+        nameTags[player] = nameTag;
+    }
+}
+
+function updateNameTags() {
+    for (var name in nameTags) {
+        nameTags[name].x = players[name].sprite.centerX - nameTags[name].width/2;
+        nameTags[name].y = players[name].sprite.centerY - 50;
+    }
 }
 
 function checkIfGameOver() {
@@ -301,6 +314,7 @@ function levelUpdate() {
     var deltaTime = (newTime - time)/30;
     time = newTime;
     updateHealthBar();
+    updateNameTags();
     checkIfGameOver();
     
     if (isLeftMouseButtonPressed()) {

@@ -208,6 +208,7 @@ function create() {
     initLevel();
     initKeyboard();
     initMouse();
+    initText();
 }
 
 function update() {
