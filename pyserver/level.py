@@ -3,6 +3,7 @@ import pdb
 
 JSON_MAP = '../public/assets/map.json'
 
+
 TILE_SIZE = 20
 PLAYER_WIDTH = 40
 PLAYER_HEIGHT = 60

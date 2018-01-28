@@ -30,7 +30,7 @@ function onClick() {
 }
 
 function keyAPressed() {
-    sendKeystroke('left', true);
+    requestMove(true);
 }
 
 function keyAReleased() {
@@ -38,7 +38,7 @@ function keyAReleased() {
 }
 
 function keyDPressed() {
-    sendKeystroke('right', true);
+    requestMove(false);
 }
 
 function keyDReleased() {
@@ -50,7 +50,7 @@ function isFormSnowballPressed() {
 }
 
 function keySpacePressed() {
-    sendJump();
+    requestJump();
 }
 
 function keySpaceReleased() {

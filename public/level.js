@@ -5,7 +5,6 @@ const MAX_SNOWBALLS = 5;
 
 var time;
 var snowballCollectionStartTime;
-var snowballCollectionPercentage; // is between 0-1
 
 var map;
 var layer;
@@ -27,6 +26,8 @@ var mainPlayerHealthbar;
 
 var numSnowballs;
 var formingSnowball;
+var formingSnowballsText;
+var snowballCollectionPercentage; // is between 0-1
 
 var aiming;
 var currentForce;
@@ -86,6 +87,22 @@ function initLevel() {
             aimSprite = game.add.sprite(100, 100, 'arrow');
             aimSprite.anchor.setTo(0,0.5);
         }
+    }
+}
+
+function requestMove(left) {
+    if (!formingSnowball) {
+        if (left) {
+            sendKeystroke('left', true);
+        } else {
+            sendKeystroke('right', true);
+        }
+    }
+}
+
+function requestJump() {
+    if (!formingSnowball) {
+        sendJump();
     }
 }
 
@@ -196,8 +213,17 @@ function deleteSnowball(id) {
     }
 }
 
+function updateFormingSnowballBar() {
+    if (formingSnowball) {
+        formingSnowballsText.text = "Building...\n\n" + 
+            Math.floor(snowballCollectionPercentage*100) + "%";
+    } else {
+        formingSnowballsText.text = "";
+    }
+}
+
 function handleSnowballForming() {
-    if (isFormSnowballPressed()) {
+    if (isFormSnowballPressed() && numSnowballs < MAX_SNOWBALLS) {
         // start timer
         if (!formingSnowball) {
             snowballCollectionStartTime = getCurrentTime();
@@ -223,12 +249,18 @@ function handleSnowballForming() {
         formingSnowball = false;
         snowballCollectionPercentage = 0;
     }
+    updateFormingSnowballBar();
 }
 
 function initText() {
-    game.add.bitmapText(game.width - 130, 5, 'carrier_command', 'Snowballs', 10);
+    var snowballsText = game.add.bitmapText(game.width - 130, 5, 'carrier_command', 'Snowballs', 10);
     game.add.bitmapText(5, 5, 'carrier_command', 'Power', 10);
     game.add.bitmapText(game.width/2 - healthbar.width/2, 5, 'carrier_command', 'Health', 10);
+
+    formingSnowballsText = game.add.bitmapText(
+            snowballsText.x, snowballsText.y + 30,
+            'carrier_command',
+            '', 10);
 }
 
 function levelUpdate() {
