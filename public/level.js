@@ -40,6 +40,9 @@ var snowball;
 var snowballs = [];
 var thrownSnowballs = {};
 
+var gameOver;
+var gameOverText;
+
 /*
 * name -> sprite
 */
@@ -47,6 +50,7 @@ var playerHealthBars = {};
 var healthbar; //healthbar sprite
 
 function initLevel() {
+    gameOver = false;
     aiming = false;
     currentForce = 0;
     aimCounter = 0;
@@ -275,6 +279,21 @@ function initText() {
             snowballsText.x, snowballsText.y + 30,
             'carrier_command',
             '', 10);
+    
+    gameOverText = game.add.bitmapText(0, 0,
+            'carrier_command',
+            '', 30);
+    gameOverText.x = game.width/2 - 200;
+    gameOverText.y = game.height/2;
+}
+
+function checkIfGameOver() {
+    if (mainPlayerHealth == 0) {
+        gameOver = true;
+        gameOverText.text = "You ded";
+    } else {
+        gameOver = false;
+    }
 }
 
 function levelUpdate() {
@@ -282,6 +301,7 @@ function levelUpdate() {
     var deltaTime = (newTime - time)/30;
     time = newTime;
     updateHealthBar();
+    checkIfGameOver();
     
     if (isLeftMouseButtonPressed()) {
         aiming = true;
