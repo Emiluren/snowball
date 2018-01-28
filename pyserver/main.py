@@ -96,15 +96,13 @@ async def sockethandler(websocket, path):
             print('Unknown key', content)
 
     async def jump_handler(content):
-        vx, vy = client.player.velocity
-        if client.player.on_ground:
-            client.player.velocity = vx, vy - 20
+        await game.jump(client)
 
     async def fire_handler(content):
-        print('FIRE')
         angle, force = content.split(' ')
         player_pos = client.player.position
         game.create_snowball(lobby, player_pos, float(angle), float(force))
+        await game.play_throw_sound(lobby)
 
     message_handler = {
         "chat": chat_handler,

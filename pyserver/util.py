@@ -4,3 +4,9 @@ async def broadcast(lobby, message):
         await lobby[client_name].websocket.send(message)
     print(message)
 
+
+async def send_message(client, message):
+    await client.websocket.send(message)
+    print(message)
+
+
