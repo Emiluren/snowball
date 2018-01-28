@@ -166,21 +166,21 @@ function decrementSnowballs() {
 }
 
 function updateSnowball(id, x, y) {
-    console.log('thrownSnowballs[id];',thrownSnowballs[id]);
     if (thrownSnowballs[id] !== undefined) {
         thrownSnowballs[id].x = x;
         thrownSnowballs[id].y = y;
     }
     else {
-        console.log("NEW")
         var snowballSprite = game.add.sprite(x, y, 'snowball');
         thrownSnowballs[id] = snowballSprite;
     }
 }
 
 function deleteSnowball(id) {
-    thrownSnowballs[id].destroy();
-    delete thrownSnowballs[id];
+    if (thrownSnowballs[id] !== undefined) {
+        thrownSnowballs[id].destroy();
+        delete thrownSnowballs[id];
+    }
 }
 
 function handleSnowballForming() {
