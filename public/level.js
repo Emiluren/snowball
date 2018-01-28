@@ -42,6 +42,9 @@ var snowball;
 var snowballs = [];
 var thrownSnowballs = {};
 
+var gameOver;
+var gameOverText;
+
 /*
 * name -> sprite
 */
@@ -49,6 +52,7 @@ var playerHealthBars = {};
 var healthbar; //healthbar sprite
 
 function initLevel() {
+    gameOver = false;
     aiming = false;
     currentForce = 0;
     aimCounter = 0;
@@ -58,7 +62,6 @@ function initLevel() {
     snowballCollectionPercentage = 0;
     initSnowballs();
     initHealthBars();
-    initText();
 
     time = new Date().getTime();
     game.stage.backgroundColor = '#909090';
@@ -106,6 +109,16 @@ function requestJump() {
     if (!formingSnowball) {
         sendJump();
     }
+}
+
+function randint(min, max) {
+    return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+function playSound(sound) {
+    var possibleSounds = sounds[sound];
+    var soundFile = possibleSounds[randint(0, possibleSounds.length - 1)];
+    soundFile.play();
 }
 
 function updatePlayerPosition(name, x, y) {
@@ -267,20 +280,34 @@ function initText() {
             snowballsText.x, snowballsText.y + 30,
             'carrier_command',
             '', 10);
+
+    gameOverText = game.add.bitmapText(0, 0,
+            'carrier_command',
+            '', 30);
+    gameOverText.x = game.width/2 - 200;
+    gameOverText.y = game.height/2;
             
     for (var player in players) {
         console.log('nametag created for', player);
         var nameTag = game.add.bitmapText(0,0, 'carrier_command', player, 8);
         nameTags[player] = nameTag;
     }
-    
 }
 
 function updateNameTags() {
     for (var name in nameTags) {
         console.log('nametag updated for', name);
-        nameTags[name].x = players[name].sprite.centerX;
+        nameTags[name].x = players[name].sprite.centerX - nameTags[name].width/2;
         nameTags[name].y = players[name].sprite.centerY - 50;
+    }
+}
+
+function checkIfGameOver() {
+    if (mainPlayerHealth == 0) {
+        gameOver = true;
+        gameOverText.text = "You ded";
+    } else {
+        gameOver = false;
     }
 }
 
@@ -290,6 +317,7 @@ function levelUpdate() {
     time = newTime;
     updateHealthBar();
     updateNameTags();
+    checkIfGameOver();
     
     if (isLeftMouseButtonPressed()) {
         aiming = true;

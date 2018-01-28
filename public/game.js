@@ -6,6 +6,14 @@ function appendOutput(cls, text) {
 var game;
 var ws;
 
+const JUMP_AUDIO = 1
+const HIT_GROUND_AUDIO = 2
+const HIT_PLAYER_AUDIO = 3
+const THROW_AUDIO = 4
+const DEATH_AUDIO = 5
+
+var sounds;
+
 $(document).ready(function () {
 
     $('#username').focus();
@@ -48,6 +56,10 @@ $(document).ready(function () {
             var id = messageContent;
             
             deleteSnowball(id);
+        },
+        "play": function(messageContent) {
+            var sound = messageContent;
+            playSound(sound);
         }
     }
 
@@ -58,7 +70,7 @@ $(document).ready(function () {
         $('#login').css('display', 'none');
         $('#console').css('display', 'block');
 
-        ws = new WebSocket("ws://localhost:8765/" + lobby + '/' + username);
+        ws = new WebSocket("ws://" + location.hostname + ":30000/" + lobby + '/' + username);
         appendOutput('status', 'Opening WebSockets connection...\n');
 
         ws.onerror = function(event) {
@@ -121,6 +133,38 @@ function sendNewSnowball() {
     ws.send('new ball');
 }
 
+function initAudio() {
+    sounds = {};
+    sounds[JUMP_AUDIO] = [
+        game.add.audio('jump1'),
+        game.add.audio('jump2'),
+        game.add.audio('jump3'),
+        game.add.audio('jump4')
+    ];
+    sounds[HIT_GROUND_AUDIO] = [
+        game.add.audio('hitground1'),
+        game.add.audio('hitground2'),
+        game.add.audio('hitground3'),
+        game.add.audio('hitground4')
+    ];
+    sounds[HIT_PLAYER_AUDIO] = [
+        game.add.audio('hitplayer1'),
+        game.add.audio('hitplayer2'),
+        game.add.audio('hitplayer3'),
+        game.add.audio('hitplayer4')
+    ];
+    sounds[THROW_AUDIO] = [
+        game.add.audio('throw1'),
+        game.add.audio('throw2'),
+        game.add.audio('throw3')
+    ];
+    sounds[DEATH_AUDIO] = [
+        game.add.audio('death1'),
+        game.add.audio('death2'),
+        game.add.audio('death3')
+    ];
+}
+
 function preload() {
     game.load.tilemap('snowballMap', 'assets/map.json', null, Phaser.Tilemap.TILED_JSON);
     game.load.image('tileset', 'assets/tileset.png');
@@ -132,15 +176,43 @@ function preload() {
     game.load.image('healthbar-main', 'assets/healthbar-main.png');
     
     game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
+
+    game.load.audio('jump1', 'assets/audio/jump1.ogg');
+    game.load.audio('jump2', 'assets/audio/jump2.ogg');
+    game.load.audio('jump3', 'assets/audio/jump3.ogg');
+    game.load.audio('jump4', 'assets/audio/jump4.ogg');
+
+    game.load.audio('hitground1', 'assets/audio/hitground1.ogg');
+    game.load.audio('hitground2', 'assets/audio/hitground2.ogg');
+    game.load.audio('hitground3', 'assets/audio/hitground3.ogg');
+    game.load.audio('hitground4', 'assets/audio/hitground4.ogg');
+
+    game.load.audio('hitplayer1', 'assets/audio/hitplayer1.ogg');
+    game.load.audio('hitplayer2', 'assets/audio/hitplayer2.ogg');
+    game.load.audio('hitplayer3', 'assets/audio/hitplayer3.ogg');
+    game.load.audio('hitplayer4', 'assets/audio/hitplayer4.ogg');
+
+    game.load.audio('throw1', 'assets/audio/throw1.ogg');
+    game.load.audio('throw2', 'assets/audio/throw2.ogg');
+    game.load.audio('throw3', 'assets/audio/throw3.ogg');
+
+    game.load.audio('death1', 'assets/audio/death1.ogg');
+    game.load.audio('death2', 'assets/audio/death2.ogg');
+    game.load.audio('death3', 'assets/audio/death3.ogg');
+
     game.stage.disableVisibilityChange = true;
 }
 
 function create() {
+    initAudio();
     initLevel();
     initKeyboard();
     initMouse();
+    initText();
 }
 
 function update() {
-    levelUpdate();
+    if (!gameOver) {
+        levelUpdate();
+    }
 }

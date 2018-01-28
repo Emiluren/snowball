@@ -136,6 +136,6 @@ async def sockethandler(websocket, path):
         del lobbies[lobby_name]
 
 asyncio.get_event_loop().run_until_complete(
-    websockets.serve(sockethandler, 'localhost', 8765))
+    websockets.serve(sockethandler, '', 30000))
 
 asyncio.get_event_loop().run_forever()

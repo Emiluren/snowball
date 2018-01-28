@@ -25,14 +25,18 @@ def run_main_loop(lobby, stop_event, event_loop):
     running = True
     while not stop_event.is_set():
         update_players(lobby.clients)
-        changed_healths, destroyed_snowballs = \
-            update_snowballs(lobby)
+        changed_healths, destroyed_snowballs, player_hit,\
+                ground_hit = update_snowballs(lobby)
 
         if changed_healths:
             asyncio.run_coroutine_threadsafe(
                 broadcast_health(
                     lobby.clients,
                     changed_healths), event_loop)
+
+            for player in changed_healths:
+                if player.health == 0:
+                    player.position = -1000, -1000
 
         if destroyed_snowballs:
             asyncio.run_coroutine_threadsafe(
@@ -43,6 +47,19 @@ def run_main_loop(lobby, stop_event, event_loop):
         if lobby.has_snowballs():
             asyncio.run_coroutine_threadsafe(
                 broadcast_snowballs(lobby), event_loop)
+
+
+        if player_hit:
+            asyncio.run_coroutine_threadsafe(
+                broadcast_audio(lobby.clients,
+                                HIT_PLAYER_AUDIO),
+                event_loop)
+
+        elif ground_hit:
+            asyncio.run_coroutine_threadsafe(
+                broadcast_audio(lobby.clients,
+                                HIT_GROUND_AUDIO),
+                event_loop)
 
         asyncio.run_coroutine_threadsafe(broadcast_positions(lobby.clients), event_loop)
         time.sleep(1/30)
@@ -109,6 +126,8 @@ def all_players(clients):
 def update_snowballs(lobby):
     changed_healths = []
     destroyed_snowballs = []
+    player_hit = False
+    ground_hit = False
     for id, snowball in lobby.snowballs.items():
         new_vel = vec.add(snowball.velocity, 
                           (0, GRAVITY_ACCELERATION))
@@ -125,14 +144,17 @@ def update_snowballs(lobby):
         else:
             destroyed_snowballs.append(id)
             if isinstance(hit_object, player.Player):
+                player_hit = True
                 speed = vec.length(snowball.velocity)
                 hit_object.health = max(0, hit_object.health - 
                                     speed*SNOWBALL_DAMAGE)
                 changed_healths.append(hit_object)
+            else:
+                ground_hit = True
     lobby.snowballs = {id: v 
                        for id, v in lobby.snowballs.items()
                       if id not in destroyed_snowballs}
-    return changed_healths, destroyed_snowballs
+    return changed_healths, destroyed_snowballs, player_hit, ground_hit
 
 
 def update_player(player, clients):
