@@ -17,6 +17,8 @@ var players = {};
 
 // List of all the players' names
 var playerNames = [];
+// name -> bitmapText
+var nameTags = {};
 
 var mainPlayerPosition;
 var mainPlayerHealth;
@@ -265,6 +267,21 @@ function initText() {
             snowballsText.x, snowballsText.y + 30,
             'carrier_command',
             '', 10);
+            
+    for (var player in players) {
+        console.log('nametag created for', player);
+        var nameTag = game.add.bitmapText(0,0, 'carrier_command', player, 8);
+        nameTags[player] = nameTag;
+    }
+    
+}
+
+function updateNameTags() {
+    for (var name in nameTags) {
+        console.log('nametag updated for', name);
+        nameTags[name].x = players[name].sprite.centerX;
+        nameTags[name].y = players[name].sprite.centerY - 50;
+    }
 }
 
 function levelUpdate() {
@@ -272,6 +289,7 @@ function levelUpdate() {
     var deltaTime = (newTime - time)/30;
     time = newTime;
     updateHealthBar();
+    updateNameTags();
     
     if (isLeftMouseButtonPressed()) {
         aiming = true;
