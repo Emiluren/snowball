@@ -30,33 +30,30 @@ def init_level():
     
     global tiles
     tiles = []
-    for i in range(height):
+    for y in range(height):
         row = []
-        for j in range(width):
-            val = data[i*width + j] != 0
-            row += [val]*TILE_SIZE;
-        tiles += [row]*TILE_SIZE;
-            
-    # tiles = [[data[i*width + j] != 0 
-    #           for j in range(width*TILE_SIZE)] for i in range(height*TILE_SIZE)]
+        for x in range(width):
+            val = data[y*width + x] != 0
+            row += [val];
+        tiles += [row];
 
 
 def overlaps(a1, a2, b1, b2):
-    return max(a1, a2) <= min(b1, b2) or \
-           max(b1, b2) <= min(a1, a2)
-
+    return max(a1, b1) <= min(a2, b2)
 
 def outside_screen(width, height, new_x, new_y):
-    return new_x < 0 or new_x + width >= len(tiles[0]) or new_y + height >= len(tiles)
+    return (new_x < 0 or
+            new_x + width >= len(tiles[0]) * TILE_SIZE or
+            new_y + height >= len(tiles) * TILE_SIZE)
 
 
 def can_move_to(width, height, new_x, new_y, players={}):
     """
     Returns whether an entity with the given width and
     height can move to the given position. Also returns
-    the player it collided with, if any.
+    the object it collided with, if any.
 
-    (int, int, int, int) -> (Player|None, bool)
+    (int, int, int, int) -> ((tile_x, tile_y)|Player|None, bool)
     """
 
     if outside_screen(width, height, new_x, new_y):
@@ -64,13 +61,15 @@ def can_move_to(width, height, new_x, new_y, players={}):
 
     # Allow entities to exit the top of the screen to fall back
     if new_y >= 0:
-        covered_tiles = map(lambda row: 
-                            row[new_x:new_x+width],
-                            tiles[new_y:new_y+height])
+        left = new_x // TILE_SIZE
+        right = (new_x + width) // TILE_SIZE
+        top = new_y // TILE_SIZE
+        bottom = (new_y + height) // TILE_SIZE
 
-        for row in covered_tiles:
-            if any(row):
-                return None, False 
+        for y in range(top, bottom + 1):
+            for x in range(left, right + 1):
+                if tiles[y][x] != 0:
+                    return (x * TILE_SIZE, y * TILE_SIZE), False
     
     for player in players.values():
         px, py = player.position

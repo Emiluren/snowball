@@ -96,8 +96,9 @@ async def sockethandler(websocket, path):
             print('Unknown key', content)
 
     async def jump_handler(content):
-        (vx, vy) = client.player.velocity
-        client.player.velocity = (vx, vy - 20)
+        vx, vy = client.player.velocity
+        if client.player.on_ground:
+            client.player.velocity = vx, vy - 20
 
     async def fire_handler(content):
         print('FIRE')
