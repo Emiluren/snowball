@@ -97,8 +97,10 @@ def update_player(player, clients):
     if can_move:
         player.velocity = (vx, vy + GRAVITY_ACCELERATION)
         player.position = (px, round(py + vy))
+        player.on_ground = False
     else:
-        player.velocity = (vx, 0);
+        player.velocity = (vx, 0)
+        player.on_ground = True
 
     px, py = player.position
     vx, vy = player.velocity

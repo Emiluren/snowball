@@ -9,6 +9,7 @@ class Player:
         self.left_pressed = False
         self.right_pressed = False
         self.velocity = (0, 0)
+        self.on_ground = False
 
 
 class Snowball:
