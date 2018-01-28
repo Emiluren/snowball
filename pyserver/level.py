@@ -51,9 +51,9 @@ def can_move_to(width, height, new_x, new_y, players={}):
     """
     Returns whether an entity with the given width and
     height can move to the given position. Also returns
-    the player it collided with, if any.
+    the object it collided with, if any.
 
-    (int, int, int, int) -> (Player|None, bool)
+    (int, int, int, int) -> ((tile_x, tile_y)|Player|None, bool)
     """
 
     if outside_screen(width, height, new_x, new_y):
