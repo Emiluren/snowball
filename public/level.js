@@ -63,7 +63,7 @@ function initLevel() {
     initText();
 
     time = new Date().getTime();
-    game.stage.backgroundColor = '#909090';
+    game.stage.backgroundColor = '#AAAAFF';
     
     map = game.add.tilemap('snowballMap');
     map.addTilesetImage('tileset', 'tileset');
