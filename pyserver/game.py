@@ -23,6 +23,7 @@ def run_main_loop(lobby, stop_event, event_loop):
             update_snowballs(lobby)
 
         if changed_healths:
+            pdb.set_trace()
             asyncio.run_coroutine_threadsafe(
                 broadcast_health(
                     lobby.clients,
@@ -65,10 +66,11 @@ async def broadcast_snowballs(lobby):
 
 async def broadcast_health(lobby, changed_healths):
     message = 'health:'
-    for name, health in changed_healths:
+    for player in changed_healths:
         await util.broadcast(lobby, 
-                             message + name + ' ' + str(health))
-        print(message + name + ' ' + str(health))
+                             message + 
+                             player.name + ' ' + 
+                             str(player.health))
 
 
 def other_players(player, clients):
@@ -87,7 +89,7 @@ def update_snowballs(lobby):
 
         new_pos = vec.add(snowball.position, new_vel)
         new_x, new_y = new_pos
-        player, can_move = level.can_move_to(SNOWBALL_SIZE,
+        hit_object, can_move = level.can_move_to(SNOWBALL_SIZE,
                                        SNOWBALL_SIZE,
                                       round(new_x), round(new_y),
                                       all_players(lobby.clients))
@@ -96,11 +98,11 @@ def update_snowballs(lobby):
             snowball.position = new_pos
         else:
             destroyed_snowballs.append(id)
-            if player is not None:
+            if isinstance(hit_object, player.Player):
                 speed = vec.length(snowball.velocity)
-                player.health = max(0, player.health - 
+                hit_object.health = max(0, hit_object.health - 
                                     speed*SNOWBALL_DAMAGE)
-                changed_healths.append(player)
+                changed_healths.append(hit_object)
     lobby.snowballs = {id: v 
                        for id, v in lobby.snowballs.items()
                       if id not in destroyed_snowballs}
