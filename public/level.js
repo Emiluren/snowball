@@ -23,6 +23,7 @@ var mainPlayerPosition;
 var mainPlayerHealth;
 var mainPlayerSprite;
 var mainPlayerName;
+var mainPlayerHealthbar;
 
 var numSnowballs;
 var formingSnowball;
@@ -79,7 +80,7 @@ function initLevel() {
         var name = playerNames[i];
         if (name != mainPlayerName) {
             sprite = game.add.sprite(0, 0, 'snowman');
-            players[name] = {x: 0, y: 0, health: 0, sprite: sprite};
+            players[name] = {x: 0, y: 0, health: 100, sprite: sprite};
         }
         else {
             aimSprite = game.add.sprite(100, 100, 'arrow');
@@ -111,17 +112,29 @@ function updateHealth(name, health) {
 }
 
 function initHealthBars() {
+    // my healthbar
+    mainPlayerhealthbar = game.add.sprite(game.width/2, 20, 'healthbar');
+    // center the healthbar a little more
+    mainPlayerhealthbar.x -= mainPlayerhealthbar.width / 2;
+    // scale longer, because size matters!
+    mainPlayerhealthbar.scale.x *= 3;
+    
+    // init the healthbars for all the enemies
     for (var name in playerNames) {
-        healthbar = game.add.sprite(100, 100, 'healthbar');
-        playerHealthBars[playerNames[name]] = healthbar;
+        if (playerNames[name] !== mainPlayerName) {
+            healthbar = game.add.sprite(100, 100, 'healthbar');
+            playerHealthBars[playerNames[name]] = healthbar;
+        }
     }
 }
 
 function updateHealthBar () {
     for (var player in playerHealthBars) {
-        console.log('name;', player, 'players[player];', players[player]);
-        playerHealthBars[player].x = mainPlayerSprite.centerX - 13;
-        playerHealthBars[player].y = mainPlayerSprite.centerY - 40;
+        
+        console.log(players[player].health / 100);
+        // healthbar for enemies
+        playerHealthBars[player].x = players[player].sprite.centerX - 13;
+        playerHealthBars[player].y = players[player].sprite.centerY - 40;
         playerHealthBars[player].scale.x = players[player].health / 100;
     }
 }
@@ -215,13 +228,14 @@ function handleSnowballForming() {
 function initText() {
     game.add.bitmapText(game.width - 130, 5, 'carrier_command', 'Snowballs', 10);
     game.add.bitmapText(5, 5, 'carrier_command', 'Power', 10);
+    game.add.bitmapText(game.width/2 - healthbar.width/2, 5, 'carrier_command', 'Health', 10);
 }
 
 function levelUpdate() {
     var newTime = getCurrentTime();
     var deltaTime = (newTime - time)/30;
     time = newTime;
-    // updateHealthBar();
+    updateHealthBar();
     
     if (isLeftMouseButtonPressed()) {
         aiming = true;

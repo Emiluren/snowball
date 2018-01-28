@@ -131,6 +131,7 @@ function preload() {
     game.load.image('healthbar', 'assets/healthbar.png');
     
     game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
+    game.stage.disableVisibilityChange = true;
 }
 
 function create() {
