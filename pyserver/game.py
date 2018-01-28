@@ -111,21 +111,27 @@ def update_player(player, clients):
     # pdb.set_trace()
     px, py = player.position
     vx, vy = player.velocity
-    _, can_move = level.can_move_to(level.PLAYER_WIDTH, 
-                                    level.PLAYER_HEIGHT,
-                                    px, round(py + vy))
+    hit_object, can_move = level.can_move_to(
+        level.PLAYER_WIDTH, 
+        level.PLAYER_HEIGHT,
+        px,
+        round(py + vy))
+
     if can_move:
         player.velocity = (vx, vy + GRAVITY_ACCELERATION)
         player.position = (px, round(py + vy))
-        player.on_ground = False
+        if py != player.position[1]:
+            player.on_ground = False
     else:
+        if vy > 0 and isinstance(hit_object, tuple) and len(hit_object) == 2:
+            player.position = (px, hit_object[1] - level.PLAYER_HEIGHT)
         player.velocity = (vx, 0)
         player.on_ground = True
 
     px, py = player.position
     vx, vy = player.velocity
     _, can_move = level.can_move_to(level.PLAYER_WIDTH,
-                                    level.PLAYER_HEIGHT,
+                                    level.PLAYER_HEIGHT - 1,
                                     round(px + vx), py)
     if can_move:
         dx = (player.left_pressed*(-1) + player.right_pressed)
