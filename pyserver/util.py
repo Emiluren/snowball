@@ -7,6 +7,5 @@ async def broadcast(lobby, message):
 
 async def send_message(client, message):
     await client.websocket.send(message)
-    print(message)
 
 
