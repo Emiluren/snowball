@@ -1,6 +1,6 @@
 import math
 
-def _from_direction(angle, length):
+def from_direction(angle, length):
     return (math.cos(angle), math.sin(angle)) * length
 
 def radians_to_degrees(angle):
@@ -25,7 +25,6 @@ def iadd(this, other):
 
 def mul(this, other):
     this_x, this_y = this
-    other_x, other_y = other
     return (this_x * other, this_y * other)
 
 def length(this):
