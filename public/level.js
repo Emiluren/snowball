@@ -106,6 +106,16 @@ function requestJump() {
     }
 }
 
+function randint(min, max) {
+    return Math.floor(Math.random() * (max - min) ) + min;
+}
+
+function playSound(sound) {
+    var possibleSounds = sounds[sound];
+    var soundFile = possibleSounds[randint(0, possibleSounds.length - 1)];
+    soundFile.play();
+}
+
 function updatePlayerPosition(name, x, y) {
     if (name == mainPlayerName) {
         mainPlayerPosition.x = x;
