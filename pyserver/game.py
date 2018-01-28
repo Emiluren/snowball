@@ -1,6 +1,7 @@
 import asyncio
 import vec
 import time
+import random
 import player
 import level
 import util
@@ -23,6 +24,19 @@ GRAVITY_ACCELERATION = 1.3
 PLAYER_MAX_SPEED = 10
 
 def run_main_loop(lobby, stop_event, event_loop):
+    for client in lobby.clients.values():
+        while True:
+            rx = random.randint(0, 
+                                len(level.tiles[0])*level.TILE_SIZE)
+            ry = random.randint(0, 
+                                len(level.tiles)*level.TILE_SIZE)
+            _, can_place = level.can_move_to(level.PLAYER_WIDTH,
+                                      level.PLAYER_HEIGHT,
+                                      rx, ry)
+            if can_place:
+                client.player.position = (rx, ry)
+                break
+
     running = True
     while not stop_event.is_set():
         update_players(lobby.clients)
