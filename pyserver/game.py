@@ -6,6 +6,11 @@ import level
 import util
 import pdb
 
+MAX_THROWING_FORCE = 30
+SNOWBALL_SPAWN_DISTANCE = 30;
+SNOWBALL_SIZE = 10
+SNOWBALL_DAMAGE = 1
+
 RUN_ACCELERATION = 1.0
 GRAVITY_ACCELERATION = 1.3
 PLAYER_MAX_SPEED = 10
@@ -15,6 +20,11 @@ def run_main_loop(lobby, stop_event, event_loop):
     while not stop_event.is_set():
         # TODO: update player positions and broadcast new state
         update_players(lobby.clients)
+        changed_healths = update_snowballs(lobby)
+
+        asyncio.run_coroutine_threadsafe(
+            broadcast_snowballs(lobby), event_loop)
+
         asyncio.run_coroutine_threadsafe(broadcast_positions(lobby.clients), event_loop)
         time.sleep(1/30)
 
@@ -24,9 +34,57 @@ async def broadcast_positions(clients):
         await util.broadcast(clients,
             'position:{} {} {}'.format(username, x, y))
 
+async def broadcast_snowballs(lobby):
+    message = 'snowballs:'
+    # if not lobby.snowballs.values():
+    #     message += ' '
+    for snowball in lobby.snowballs.values():
+        x, y = snowball.position
+        message += '{} {} {};'.format(snowball.id, x, y)
+    await util.broadcast(lobby.clients, message)
+    
+
+async def broadcast_health(lobby, changed_healths):
+    message = 'health:'
+    for name, health in changed_healths:
+        await util.broadcast(lobby, 
+                             message + name + ' ' + str(health))
+
 
 def other_players(player, clients):
     return {p: v for p, v in clients.items() if p != player.name}
+
+def all_players(clients):
+    return {p: v.player for p, v in clients.items()}
+
+
+def update_snowballs(lobby):
+    changed_healths = []
+    destroyed_snowballs = []
+    for id, snowball in lobby.snowballs.items():
+        new_vel = vec.add(snowball.velocity, 
+                          (0, GRAVITY_ACCELERATION))
+
+        new_pos = vec.add(snowball.position, new_vel)
+        new_x, new_y = new_pos
+        player, can_move = level.can_move_to(SNOWBALL_SIZE,
+                                       SNOWBALL_SIZE,
+                                      round(new_x), round(new_y),
+                                      all_players(lobby.clients))
+        if can_move:
+            snowball.velocity = new_vel
+            snowball.position = new_pos
+        else:
+            destroyed_snowballs.append(id)
+            if player is not None:
+                speed = vec.length(snowball.velocity)
+                player.health = max(0, player.health - 
+                                    speed*SNOWBALL_DAMAGE)
+                changed_healths.append(player)
+    lobby.snowballs = {id: v 
+                       for id, v in lobby.snowballs.items()
+                      if id not in destroyed_snowballs}
+    return changed_healths
 
 
 def update_player(player, clients):

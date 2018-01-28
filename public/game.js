@@ -27,14 +27,15 @@ $(document).ready(function () {
             var y = contentsSplit[2];
             updatePlayerPosition(name, x, y);
         },
-        "throw": function(messageContent) {
+        "snowballs": function(messageContent) {
             var serverBalls = {};
             var contentsSplit = messageContent.split(';');
-            for (var snowball in contentsSplit) {
+            for (var i in contentsSplit) {
+                var snowball = contentsSplit[i];
                 var data = snowball.split(' ');
                 var id = data[0];
-                var x = coordinates[1];
-                var y = coordinates[2];
+                var x = data[1];
+                var y = data[2];
                 serverBalls[id] = {'x':x, 'y':y};
             }
             updateSnowballs(serverBalls);

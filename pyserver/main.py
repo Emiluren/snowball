@@ -97,6 +97,7 @@ async def sockethandler(websocket, path):
         client.player.velocity = (vx, vy - 20)
 
     async def fire_handler(content):
+        print('FIRE')
         angle, force = content.split(' ')
         player_pos = client.player.position
         game.create_snowball(lobby, player_pos, float(angle), float(force))
