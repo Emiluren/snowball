@@ -9,7 +9,7 @@ sudo pip3 install websockets
 
 # Go into pyserver and start the actual game server:
 
-cp pyserver
+cd pyserver
 python3 main.py
 
 # Now that the server is running you can open the address of the web server you started
