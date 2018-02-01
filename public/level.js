@@ -126,6 +126,8 @@ function playSound(sound) {
 }
 
 function updatePlayerPosition(name, x, y) {
+        updateNameTags();
+        updateHealthBar();
     if (name == mainPlayerName) {
         mainPlayerPosition.x = x;
         mainPlayerPosition.y = y;
@@ -344,8 +346,6 @@ function levelUpdate() {
     var newTime = getCurrentTime();
     var deltaTime = (newTime - time)/30;
     time = newTime;
-    updateHealthBar();
-    updateNameTags();
     checkIfGameOver();
     updatePowerBar();
     
