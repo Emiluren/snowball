@@ -60,6 +60,16 @@ $(document).ready(function () {
         "play": function(messageContent) {
             var sound = messageContent;
             playSound(sound);
+        },
+        "healthpack": function(messageContent) {
+            var contentsSplit = messageContent.split(' ');
+            var id = contentsSplit[0];
+            var x = contentsSplit[1];
+            var y = contentsSplit[2];
+            addHealthpack(id, x, y);
+        }
+        "remove hp": function(messageContent) {
+            deleteHealthPack(messageContent);
         }
     }
 
@@ -175,6 +185,7 @@ function preload() {
     game.load.image('healthbar', 'assets/healthbar.png');
     game.load.image('healthbar-main', 'assets/healthbar-main.png');
     game.load.image('healthbar-red', 'assets/healthbar-red.png');
+    game.load.image('healthpack', 'assets/fridge.png');
     
     game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
 
@@ -213,7 +224,5 @@ function create() {
 }
 
 function update() {
-    if (!gameOver) {
-        levelUpdate();
-    }
+    levelUpdate();
 }

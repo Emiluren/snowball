@@ -3,7 +3,6 @@ const AIM_POWER_SPEED = 0.1;
 const SNOWBALL_COLLECT_TIME = 1000;
 const MAX_SNOWBALLS = 5;
 
-var time;
 var snowballCollectionStartTime;
 
 var map;
@@ -54,6 +53,11 @@ var playerRedBars = {};
 var healthbar; //healthbar sprite
 var redbar; // red healthbar underneath healthbar
 
+/*
+ * id -> sprite
+ */
+var healthpacks = {};
+
 
 function initLevel() {
     gameOver = false;
@@ -67,7 +71,6 @@ function initLevel() {
     initSnowballs();
     initHealthBars();
 
-    time = new Date().getTime();
     game.stage.backgroundColor = '#AAAAFF';
     
     map = game.add.tilemap('snowballMap');
@@ -340,35 +343,50 @@ function checkIfGameOver() {
     }
 }
 
+function deleteHealthPack(id) {
+    if (healthpacks[id] !== undefined) {
+        healthpacks[id].destroy();
+        delete healthpacks[id];
+    }
+}
+
+function updateHealthPacks() {
+    // TODO implement
+}
+
+function addHealthpack(id, x, y) {
+    var sprite = game.add.sprite(x, y, 'healthpack');
+    healthpacks[id] = sprite;
+}
+
 function levelUpdate() {
-    var newTime = getCurrentTime();
-    var deltaTime = (newTime - time)/30;
-    time = newTime;
     updateHealthBar();
     updateNameTags();
     checkIfGameOver();
     updatePowerBar();
     
-    if (isLeftMouseButtonPressed() && numSnowballs > 0) {
-        aiming = true;
-        currentForce = (-Math.cos(
-                aimCounter*AIM_POWER_SPEED) + 1)/2;
-        currentAngle = getAngle(mainPlayerPosition.x,
-                    mainPlayerPosition.y, 
-                    getMouseX(), getMouseY());
-                    
-        aimCounter++;
-    } else {
-        if (aiming) {
-            if (numSnowballs > 0) {
-                sendFire(currentAngle, currentForce);
-                decrementSnowballs();
+    if (!gameOver) {
+        if (isLeftMouseButtonPressed() && numSnowballs > 0) {
+            aiming = true;
+            currentForce = (-Math.cos(
+                    aimCounter*AIM_POWER_SPEED) + 1)/2;
+            currentAngle = getAngle(mainPlayerPosition.x,
+                        mainPlayerPosition.y, 
+                        getMouseX(), getMouseY());
+                        
+            aimCounter++;
+        } else {
+            if (aiming) {
+                if (numSnowballs > 0) {
+                    sendFire(currentAngle, currentForce);
+                    decrementSnowballs();
+                }
             }
+            currentForce = 0;
+            aiming = false;
+            aimCounter = 0;
         }
-        currentForce = 0;
-        aiming = false;
-        aimCounter = 0;
+        handleSnowballForming();
     }
-    handleSnowballForming();
 }
 

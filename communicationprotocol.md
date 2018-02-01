@@ -13,6 +13,12 @@ These are the messages sent between the server and clients.
 | delete ball   | id                            |
 | play          | audionumber                   |
 
+### Not yet implemented
+
+| Type          | Content                       |
+|:-------------:|-------------------------------|
+| healthpack    | id x y                        |
+| remove hp     | id                            |
 
 ## Client to server
 
