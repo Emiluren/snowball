@@ -1,5 +1,7 @@
 (ns frost-fighters.core
-  (:require [clojure.core.async :as a :refer [>! <! >!! <!! go chan timeout]]
+  (:require [clojure.core.async :as a :refer [>! <! >!! <!!
+                                              go go-loop chan put! timeout]]
+            [clojure.core.match :refer [match]]
             [clojure.string :as str]
             [ring.util.response :refer [file-response]]
             [org.httpkit.server :as httpkit]
@@ -15,54 +17,63 @@
 
 (defonce server (atom nil))
 
-(defonce server-state (atom {}))
+(defonce lobby-channels (ref {}))
 
-(defn connect-user [{:keys [lobby username socket]}]
-  (swap! server-state assoc-in [lobby username] socket)
-  (println (str \( lobby \) " User " username " has connected")))
+(defn chat-handler [input-channel]
+  (go-loop [connected-clients {}]
+    (let [received-message (<! input-channel)]
+      (match received-message
 
-(defn disconnect-user [{:keys [lobby username]} _]
-  (swap! server-state update lobby dissoc username)
-  (println (str \( lobby \) " User " username " has disconnected")))
+             [:new-client username out-channel]
+             (recur (assoc connected-clients username out-channel))
 
-(defn send-to-all [{:keys [lobby username]} data]
-  (doseq [[_ client] (dissoc (get @server-state lobby) :running)]
-    (httpkit/send! client data)))
+             [:chat username message]
+             (do
+               (doseq [[_ client] (dissoc connected-clients username)]
+                 (>! client (str "chat:" username ": " message)))
+               (recur connected-clients))
 
-(def message-handlers
-  {"chat"
-   (fn [{:keys [lobby username]} message-content]
-     (doseq [[_ client] (dissoc (get @server-state lobby) username :running)]
-       (httpkit/send! client (str "chat:" username ": " message-content))))
-   "start game"
-   (fn [{:keys [lobby socket] :as conn} _]
-     ;; TODO: Move running inside a swap to get rid of race condition!
-     (if (get-in @server-state [lobby :running])
-       (httpkit/send! socket
-                      (str "chat:(Server) " lobby " is already playing"))
-       (do
-         (println "Starting game")
-         (swap! server-state assoc-in [lobby :running] true)
-         (let [connected-clients (keys (get @server-state lobby))]
-           (send-to-all conn
-                        (str "start game:"
-                             (apply str
-                                    (interpose " " connected-clients)))))
-         (game/run-main-loop server-state conn))))})
+             nil nil
 
-(defn receive-data [{:keys [lobby username] :as conn} data]
+             :else (recur connected-clients)))))
+
+;; (defn start-game [{:keys [lobby socket] :as conn}]
+;;   (println "Starting game")
+;;   (swap! server-state assoc-in [lobby :running] true)
+;;   (let [connected-clients (keys (get @server-state lobby))]
+;;     (send-to-all conn
+;;                  (str "start game:"
+;;                       (apply str (interpose " " connected-clients)))))
+;;   (game/run-main-loop server-state conn))
+
+(defn receive-data [{:keys [lobby username] :as conn} lobby-channel data]
   (let [[message-type message-content] (str/split data #":" 2)]
-    (if-let [handler (get message-handlers message-type)]
-      (handler conn message-content)
+    (case message-type
+      "chat" (put! lobby-channel [:chat username message-content])
       (println (str \( lobby \) " Received message of unknown type: "
                     data)))))
 
-(defn socket-handler [lobby username request]
+(defn channel-for-lobby! [lobby-name]
+  (dosync (if (contains? @lobby-channels lobby-name)
+            (get @lobby-channels lobby-name)
+            (let [new-chan (chan)]
+              (alter lobby-channels assoc lobby-name new-chan)
+              (println "Starting chat handler for" lobby-name)
+              (chat-handler new-chan)
+              new-chan))))
+
+(defn socket-handler [lobby-name username request]
   (httpkit/with-channel request channel
-    (let [conn {:lobby lobby, :username username, :socket channel}]
-      (connect-user conn)
-      (httpkit/on-close channel (partial disconnect-user conn))
-      (httpkit/on-receive channel (partial receive-data conn)))))
+    (let [conn {:lobby lobby-name, :username username}
+          lobby-channel (channel-for-lobby! lobby-name)
+          my-channel (chan)]
+      (printf "(%s) %s connected\n" lobby-name username)
+      (put! lobby-channel [:new-client username my-channel])
+      (go-loop []
+        (httpkit/send! channel (<! my-channel))
+        (recur))
+      (httpkit/on-close channel (fn [_] (println username "diconnected")))
+      (httpkit/on-receive channel (partial receive-data conn lobby-channel)))))
 
 (defroutes app
   (GET "/" [] (index))
