@@ -1,5 +1,5 @@
 (ns frost-fighters.core
-  (:require [clojure.core.async :as a :refer [>! <! >!! <!!
+  (:require [clojure.core.async :as a :refer [>! <! >!! <!! close!
                                               go go-loop chan put! timeout]]
             [clojure.core.match :refer [match]]
             [clojure.string :as str]
@@ -19,37 +19,56 @@
 
 (defonce lobby-channels (ref {}))
 
-(defn chat-handler [input-channel]
+(defn reset-channels []
+  (dosync
+   (doseq [[_ channel] @lobby-channels]
+     (close! channel))
+   (ref-set lobby-channels {})))
+
+(defn start-game [input-channel connected-clients]
+  (println "Starting game")
+  (let [start-game-message (str "start game:"
+                                (apply str (interpose " " connected-clients)))]
+    (go
+      (doseq [[_ client] connected-clients]
+        (>! client start-game-message))))
+  (game/run-main-loop input-channel connected-clients))
+
+(defn handle-message [received-message input-channel connected-clients]
+  (match received-message
+         [:new-client username out-channel]
+         (assoc connected-clients username out-channel)
+
+         [:chat username message]
+         (do
+           (doseq [[_ client] (dissoc connected-clients username)]
+             (>! client (str "chat:" username ": " message)))
+           connected-clients)
+
+         :start-game
+         (do
+           (start-game input-channel connected-clients)
+           connected-clients)
+
+         nil nil
+
+         :else connected-clients))
+
+(defn lobby-handler [input-channel]
   (go-loop [connected-clients {}]
     (let [received-message (<! input-channel)]
-      (match received-message
-
-             [:new-client username out-channel]
-             (recur (assoc connected-clients username out-channel))
-
-             [:chat username message]
-             (do
-               (doseq [[_ client] (dissoc connected-clients username)]
-                 (>! client (str "chat:" username ": " message)))
-               (recur connected-clients))
-
-             nil nil
-
-             :else (recur connected-clients)))))
-
-;; (defn start-game [{:keys [lobby socket] :as conn}]
-;;   (println "Starting game")
-;;   (swap! server-state assoc-in [lobby :running] true)
-;;   (let [connected-clients (keys (get @server-state lobby))]
-;;     (send-to-all conn
-;;                  (str "start game:"
-;;                       (apply str (interpose " " connected-clients)))))
-;;   (game/run-main-loop server-state conn))
+      (when-let [new-clients (handle-message received-message
+                                             input-channel
+                                             connected-clients)]
+        (recur new-clients)))))
 
 (defn receive-data [{:keys [lobby username] :as conn} lobby-channel data]
   (let [[message-type message-content] (str/split data #":" 2)]
     (case message-type
       "chat" (put! lobby-channel [:chat username message-content])
+      "start game" (put! lobby-channel :start-game)
+      "key down" (put! lobby-channel [:key-down username message-content])
+      "key up" (put! lobby-channel [:key-up username message-content])
       (println (str \( lobby \) " Received message of unknown type: "
                     data)))))
 
@@ -59,7 +78,7 @@
             (let [new-chan (chan)]
               (alter lobby-channels assoc lobby-name new-chan)
               (println "Starting chat handler for" lobby-name)
-              (chat-handler new-chan)
+              (lobby-handler new-chan)
               new-chan))))
 
 (defn socket-handler [lobby-name username request]
