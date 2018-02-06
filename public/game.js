@@ -24,6 +24,7 @@ $(document).ready(function () {
         },
         "start game": function(messageContent) {
             var callbacks = { preload: preload, create: create, update: update };
+            var windowWidth = window.innerWidth;
             game = new Phaser.Game(800, 600, Phaser.AUTO, 'game-container', callbacks);
             playerList = messageContent.split(' ');
             addPlayers(playerList);

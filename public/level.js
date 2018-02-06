@@ -85,6 +85,7 @@ function initLevel() {
     );
     
     powerBar = game.add.sprite(5, 20, 'powerbar');
+    powerBar.fixedToCamera = true;
 
     for (var i in playerNames) {
         var name = playerNames[i];
@@ -126,8 +127,9 @@ function playSound(sound) {
 }
 
 function updatePlayerPosition(name, x, y) {
-        updateNameTags();
-        updateHealthBar();
+    game.camera.follow(mainPlayerSprite);
+    updateNameTags();
+    updateHealthBar();
     if (name == mainPlayerName) {
         mainPlayerPosition.x = x;
         mainPlayerPosition.y = y;
@@ -172,6 +174,9 @@ function initHealthBars() {
     );
     mainPlayerRedBar.scale.x *= 3;
     mainPlayerRedBar.moveDown();
+    
+    mainPlayerhealthbar.fixedToCamera = true;
+    mainPlayerRedBar.fixedToCamera = true;
     
     // init the healthbars for all the enemies
     for (var name in playerNames) {
@@ -232,6 +237,7 @@ function initSnowballs() {
         snowball = game.add.sprite(game.width - 15 * i - 40, 20, 'snowball');
         snowball.visible = false;
         snowballs.push(snowball);
+        snowball.fixedToCamera = true;
     }
 }
 
@@ -303,8 +309,8 @@ function handleSnowballForming() {
 
 function initText() {
     var snowballsText = game.add.bitmapText(game.width - 130, 5, 'carrier_command', 'Snowballs', 10);
-    game.add.bitmapText(5, 5, 'carrier_command', 'Power', 10);
-    game.add.bitmapText(game.width/2 - mainPlayerhealthbar.width/2, 5, 'carrier_command', 'Health', 10);
+    var powerbarText = game.add.bitmapText(5, 5, 'carrier_command', 'Power', 10);
+    var healthText = game.add.bitmapText(game.width/2 - mainPlayerhealthbar.width/2, 5, 'carrier_command', 'Health', 10);
 
     formingSnowballsText = game.add.bitmapText(
             snowballsText.x, snowballsText.y + 30,
@@ -323,6 +329,12 @@ function initText() {
         var nameTag = game.add.bitmapText(0,0, 'carrier_command', player, 8);
         nameTags[player] = nameTag;
     }
+    
+    snowballsText.fixedToCamera = true;
+    gameOverText.fixedToCamera = true;
+    formingSnowballsText.fixedToCamera = true;
+    powerbarText.fixedToCamera = true;
+    healthText.fixedToCamera = true;
 }
 
 function updateNameTags() {
