@@ -8,7 +8,7 @@ These are the messages sent between the server and clients.
 |:-------------:|-------------------------------|
 | position      | x y                           |
 | start game    | name1 name2 ...               |
-| snowballs     | id1 x1 y1 id2 x2 y2 ...       |
+| snowballs     | id1 x1 y1; id2 x2 y2; ...       |
 | health        | name health                   |
 | delete ball   | id                            |
 | play          | audionumber                   |
