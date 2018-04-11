@@ -5,3 +5,4 @@
 *.min.*
 \#*\#
 __pycache__/
+target/
