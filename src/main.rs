@@ -1,9 +1,13 @@
-extern crate ws;
+extern crate tungstenite as ts;
 
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::vec::Vec;
+use ts::handshake::server::Request;
+use ts::protocol::Role;
 
 struct Player {
     pub name: String,
@@ -12,63 +16,84 @@ struct Player {
 
 struct Lobby {
     pub clients: HashMap<String, Client>,
+    // TODO: add snowballs
+    // TODO: add thread
 }
 
 struct Client {
+    pub websocket: ts::WebSocket<TcpStream>,
+    pub player: Player,
 }
 
-struct ClientHandler {
-    pub websocket: ws::Sender,
-    pub lobbies: Arc<Mutex<HashMap<String, Lobby>>>,
-    pub lobby_name: String,
-    pub username: String,
+fn parse_request(path: &str) -> Option<(String, String)> {
+    let lobby_and_username: Vec<_> = path.split('/').filter(|s| !s.is_empty()).collect();
+
+    match lobby_and_username.as_slice() {
+        &[lobby, username] => Some((lobby.to_string(), username.to_string())),
+        _ => None
+    }
 }
 
-impl ws::Handler for ClientHandler {
-    fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
-        let lobby_and_username: Vec<_> = req.resource().split('/').filter(|s| !s.is_empty()).collect();
-        let (lobby_name, username) = match lobby_and_username.as_slice() {
-            &[lobby, username] => (lobby, username),
-            _ => {
-                let mut res = ws::Response::from_request(req)?;
-                res.set_status(400);
-                res.set_reason("Expected /[lobby name]/[username]");
-                return Ok(res);
-            }
-        };
+fn add_new_client_to_lobby(
+    lobbies: Arc<Mutex<HashMap<String, Lobby>>>,
+    websocket: ts::WebSocket<TcpStream>,
+    lobby_name: &String,
+    username: &String,
+) {
+    let mut lobbies = lobbies.lock().unwrap();
 
-        self.lobby_name = lobby_name.to_string();
-        self.username = username.to_string();
+    let lobby = lobbies.entry(lobby_name.to_string()).or_insert(Lobby {
+        clients: HashMap::new()
+    });
 
-        let mut lobbies = self.lobbies.lock().unwrap();
+    // TODO: check if game is already running here
 
-        let lobby = lobbies.entry(lobby_name.to_string()).or_insert(Lobby {
-            clients: HashMap::new()
-        });
-
-        // TODO: check if game is already running here
-
-        lobby.clients.insert(username.to_string(), Client {
-        });
-        println!("{} has joined {}", username, lobby_name);
-        ws::Response::from_request(req)
-    }
-
-    fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
-        self.websocket.send(msg).unwrap();
-        Ok(())
-    }
+    lobby.clients.insert(username.to_string(), Client {
+        websocket: websocket,
+        player: Player {
+            name: username.to_string(),
+        },
+    });
 }
 
 fn main() {
     let lobbies = Arc::new(Mutex::new(HashMap::new()));
-    ws::listen("127.0.0.1:30000", |out| {
-        out.send("chat:Hello WebSocket").unwrap();
-        ClientHandler {
-            lobbies: lobbies.clone(),
-            websocket: out,
-            lobby_name: String::new(),
-            username: String::new(),
-        }
-    }).unwrap();
+    let server = TcpListener::bind("127.0.0.1:30000").unwrap();
+    for stream_res in server.incoming() {
+        let lobbies_clone = lobbies.clone();
+        thread::spawn(move || {
+            let username = RefCell::new(String::new());
+            let lobby_name = RefCell::new(String::new());
+            let callback = |req: &Request| {
+                match parse_request(&req.path) {
+                    Some((un, ln)) => {
+                        username.replace(un);
+                        lobby_name.replace(ln);
+                        Ok(None)
+                    }
+                    None => Err(ts::Error::Http(400))
+                }
+            };
+
+            let stream = stream_res.unwrap();
+            let mut websocket = ts::accept_hdr(stream.try_clone().unwrap(), callback).unwrap();
+            let websocket2 = ts::WebSocket::from_raw_socket(stream, Role::Server);
+            add_new_client_to_lobby(
+                lobbies_clone, websocket2, &lobby_name.borrow(), &username.borrow());
+            println!("{} has joined {}", username.borrow(), lobby_name.borrow());
+
+            loop {
+                match websocket.read_message() {
+                    Ok(msg) => {
+                        if msg.is_binary() || msg.is_text() {
+                            websocket.write_message(msg).unwrap();
+                        }
+                    },
+                    _ => {
+                        // TODO: could not read, remove player from lobby
+                    }
+                }
+            }
+        });
+    }
 }
