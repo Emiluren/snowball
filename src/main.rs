@@ -1,11 +1,7 @@
-extern crate simple_server;
 extern crate ws;
 
-use simple_server::Server;
-use std::fs::File;
 use std::collections::HashMap;
-use std::io::Read;
-use std::{sync, sync::{Arc, Mutex}};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::vec::Vec;
 
@@ -14,13 +10,21 @@ struct Player {
     // TODO: add other fields
 }
 
-#[derive(Clone)]
-struct Client {
-    pub websocket: ws::Sender,
-    pub lobbies: sync::Weak<Mutex<HashMap<String, Lobby>>>,
+struct Lobby {
+    pub clients: HashMap<String, Client>,
 }
 
-impl ws::Handler for Client {
+struct Client {
+}
+
+struct ClientHandler {
+    pub websocket: ws::Sender,
+    pub lobbies: Arc<Mutex<HashMap<String, Lobby>>>,
+    pub lobby_name: String,
+    pub username: String,
+}
+
+impl ws::Handler for ClientHandler {
     fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
         let lobby_and_username: Vec<_> = req.resource().split('/').filter(|s| !s.is_empty()).collect();
         let (lobby_name, username) = match lobby_and_username.as_slice() {
@@ -33,18 +37,10 @@ impl ws::Handler for Client {
             }
         };
 
-        let lobbies_mutex = match self.lobbies.upgrade() {
-            None => {
-                let mut res = ws::Response::from_request(req)?;
-                res.set_status(500);
-                res.set_reason("Invalid server state");
-                return Ok(res);
-            }
-            Some(lobbies) => {
-                lobbies
-            }
-        };
-        let mut lobbies = lobbies_mutex.lock().unwrap();
+        self.lobby_name = lobby_name.to_string();
+        self.username = username.to_string();
+
+        let mut lobbies = self.lobbies.lock().unwrap();
 
         let lobby = lobbies.entry(lobby_name.to_string()).or_insert(Lobby {
             clients: HashMap::new()
@@ -52,7 +48,8 @@ impl ws::Handler for Client {
 
         // TODO: check if game is already running here
 
-        lobby.clients.insert(username.to_string(), self.clone());
+        lobby.clients.insert(username.to_string(), Client {
+        });
         println!("{} has joined {}", username, lobby_name);
         ws::Response::from_request(req)
     }
@@ -63,33 +60,15 @@ impl ws::Handler for Client {
     }
 }
 
-struct Lobby {
-    pub clients: HashMap<String, Client>,
-}
-
-fn serve_files() {
-    let server = Server::new(|_request, mut response| {
-        // Redirect to index.html for all requests that don't already specify
-        // a static file
-        let mut f = File::open("public/index.html")?;
-        let mut source = Vec::new();
-        f.read_to_end(&mut source)?;
-        Ok(response.body(source)?)
-    });
-    server.listen("127.0.0.1", "7979");
-}
-
 fn main() {
-    thread::spawn(|| {
-        serve_files();
-    });
-
     let lobbies = Arc::new(Mutex::new(HashMap::new()));
     ws::listen("127.0.0.1:30000", |out| {
-        out.send("Hello WebSocket").unwrap();
-        Client {
-            lobbies: Arc::downgrade(&lobbies),
+        out.send("chat:Hello WebSocket").unwrap();
+        ClientHandler {
+            lobbies: lobbies.clone(),
             websocket: out,
+            lobby_name: String::new(),
+            username: String::new(),
         }
     }).unwrap();
 }

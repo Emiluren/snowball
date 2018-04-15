@@ -5,4 +5,4 @@ authors = []
 
 [dependencies]
 ws = "*"
-simple-server = "*"
+#simple-server = "*"
