@@ -6,8 +6,8 @@ use std::net::{TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::vec::Vec;
-use ts::handshake::server::Request;
-use ts::protocol::Role;
+use tungstenite::handshake::server::Request;
+use tungstenite::protocol::Role;
 
 #[derive(Debug)]
 struct Player {
@@ -76,10 +76,10 @@ fn add_new_client_to_lobby(
 }
 
 fn main() {
-    let lobbies = Arc::new(Mutex::new(HashMap::new()));
+    let lobbies_arc = Arc::new(Mutex::new(HashMap::new()));
     let server = TcpListener::bind("127.0.0.1:30000").unwrap();
     for stream_res in server.incoming() {
-        let lobbies = lobbies.clone();
+        let lobbies_arc = lobbies_arc.clone();
         thread::spawn(move || {
             let username = RefCell::new(String::new());
             let lobby_name = RefCell::new(String::new());
@@ -103,7 +103,7 @@ fn main() {
             let lobby_name = lobby_name.borrow();
             let username = username.borrow();
             add_new_client_to_lobby(
-                lobbies.clone(),
+                lobbies_arc.clone(),
                 websocket2,
                 &lobby_name,
                 &username,
@@ -112,33 +112,16 @@ fn main() {
 
             loop {
                 let message = websocket.read_message();
-                let mut lobbies = lobbies.lock().unwrap();
+                let mut lobbies = lobbies_arc.lock().unwrap();
 
                 match message {
                     Ok(msg) => {
-                        if msg.is_text() {
-                            let message_text = msg.into_text().unwrap();
-                            let split_message: Vec<_> =
-                                message_text.splitn(2, ':').collect();
-                            let message_type = split_message[0];
-                            let message_content = split_message.get(1).unwrap_or(&"");
-                            // TODO: break this out somehow maybe
-                            let mut lobby = lobbies.get_mut(&*lobby_name).unwrap();
-
-                            match message_type {
-                                "chat" => {
-                                    let message_string = format!(
-                                        "({}) {}: {}", lobby_name, username, message_content
-                                    );
-                                    println!("{}", message_string);
-                                    lobby.send_to_others(
-                                        &username,
-                                        &format!("chat:{}", &message_string),
-                                    );
-                                },
-                                _ => println!("Unknown message type: {}", message_text),
-                            }
-                        }
+                        handle_message(
+                            &mut lobbies,
+                            msg,
+                            &lobby_name,
+                            &username,
+                        );
                     },
                     _ => {
                         println!("{} disconnected from {}", username, lobby_name);
@@ -159,5 +142,38 @@ fn main() {
                 }
             }
         });
+    }
+}
+
+fn handle_message(
+    lobbies: &mut HashMap<String, Lobby>,
+    msg: ts::protocol::Message,
+    lobby_name: &str,
+    username: &str,
+) {
+    if !msg.is_text() {
+        return;
+    }
+
+    let message_text = msg.into_text().unwrap();
+    let split_message: Vec<_> =
+        message_text.splitn(2, ':').collect();
+    let message_type = split_message[0];
+    let message_content = split_message.get(1).unwrap_or(&"");
+
+    let mut lobby = lobbies.get_mut(&*lobby_name).unwrap();
+
+    match message_type {
+        "chat" => {
+            let message_string = format!(
+                "({}) {}: {}", lobby_name, username, message_content
+            );
+            println!("{}", message_string);
+            lobby.send_to_others(
+                &username,
+                &format!("chat:{}", &message_string),
+            );
+        },
+        _ => println!("Unknown message type: {}", message_text),
     }
 }
