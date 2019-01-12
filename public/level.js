@@ -38,6 +38,7 @@ var currentAngle;
 var aimCounter;
 var aimSprite;
 var powerBar;
+var powerBarInactive;
 
 var snowball;
 var snowballs = [];
@@ -84,8 +85,14 @@ function initLevel() {
         'snowman'
     );
 
+    powerBarInactive = game.add.sprite(5, 20, 'powerbar');
+    powerBarInactive.fixedToCamera = true;
+    powerBarInactive.scale.x = 100;
+    powerBarInactive.tint = 0x615E5E;
+
     powerBar = game.add.sprite(5, 20, 'powerbar');
     powerBar.fixedToCamera = true;
+
 
     for (var i in playerNames) {
         var name = playerNames[i];
@@ -235,18 +242,19 @@ function getCurrentTime() {
 function initSnowballs() {
     for (var i = MAX_SNOWBALLS; i > 0; i--) {
         snowball = game.add.sprite(game.width - 15 * i - 40, 20, 'snowball');
-        snowball.visible = false;
+        snowball.visible = true;
+        snowball.tint = 0x615E5E;
         snowballs.push(snowball);
         snowball.fixedToCamera = true;
     }
 }
 
 function displaySnowballs() {
-    snowballs[numSnowballs-1].visible = true;
+    snowballs[numSnowballs-1].tint = 0xffffff;;
 }
 
 function decrementSnowballs() {
-    snowballs[numSnowballs-1].visible = false;
+    snowballs[numSnowballs-1].tint = 0x615E5E;
     numSnowballs--;
 }
 
