@@ -6,11 +6,13 @@ function appendOutput(cls, text) {
 var game;
 var ws;
 
-const JUMP_AUDIO = 1
-const HIT_GROUND_AUDIO = 2
-const HIT_PLAYER_AUDIO = 3
-const THROW_AUDIO = 4
-const DEATH_AUDIO = 5
+const JUMP_AUDIO = 1;
+const HIT_GROUND_AUDIO = 2;
+const HIT_PLAYER_AUDIO = 3;
+const THROW_AUDIO = 4;
+const DEATH_AUDIO = 5;
+const GAME_WIDTH = 800;
+const GAME_HEIGHT = 600;
 
 var sounds;
 
@@ -25,7 +27,7 @@ $(document).ready(function () {
         "start game": function(messageContent) {
             var callbacks = { preload: preload, create: create, update: update };
             var windowWidth = window.innerWidth;
-            game = new Phaser.Game(800, 600, Phaser.AUTO, 'game-container', callbacks);
+            game = new Phaser.Game(GAME_WIDTH, GAME_HEIGHT, Phaser.AUTO, 'game-container', callbacks);
             playerList = messageContent.split(' ');
             addPlayers(playerList);
         },
@@ -50,19 +52,19 @@ $(document).ready(function () {
             var contentsSplit = messageContent.split(' ');
             var name = contentsSplit[0];
             var health = contentsSplit[1];
-            
+
             updateHealth(name, health);
         },
         "delete ball": function (messageContent) {
             var id = messageContent;
-            
+
             deleteSnowball(id);
         },
         "play": function(messageContent) {
             var sound = messageContent;
             playSound(sound);
         }
-    }
+    };
 
     $('#login').submit(function () {
         var lobby = $('#lobby').val();
@@ -176,7 +178,7 @@ function preload() {
     game.load.image('healthbar', 'assets/healthbar.png');
     game.load.image('healthbar-main', 'assets/healthbar-main.png');
     game.load.image('healthbar-red', 'assets/healthbar-red.png');
-    
+
     game.load.bitmapFont('carrier_command', 'assets/carrier_command.png', 'assets/carrier_command.xml');
 
     game.load.audio('jump1', 'assets/audio/jump1.ogg');

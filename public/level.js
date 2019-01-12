@@ -9,7 +9,7 @@ var snowballCollectionStartTime;
 var map;
 var layer;
 
-// map of the player names mapped to their position, 
+// map of the player names mapped to their position,
 // health and sprite.
 // Does not include this client's player
 // name -> {x, y, health, sprite}
@@ -69,10 +69,10 @@ function initLevel() {
 
     time = new Date().getTime();
     game.stage.backgroundColor = '#AAAAFF';
-    
+
     map = game.add.tilemap('snowballMap');
     map.addTilesetImage('tileset', 'tileset');
-    
+
     layer = map.createLayer('mapLayer');
     layer.resizeWorld();
 
@@ -83,7 +83,7 @@ function initLevel() {
         mainPlayerPosition.y,
         'snowman'
     );
-    
+
     powerBar = game.add.sprite(5, 20, 'powerbar');
     powerBar.fixedToCamera = true;
 
@@ -138,7 +138,7 @@ function updatePlayerPosition(name, x, y) {
         if (aiming) {
             aimSprite.visible = true;
             aimSprite.x = mainPlayerSprite.centerX; //+ mainPlayerSprite.width/2;
-            aimSprite.y = mainPlayerSprite.centerY;
+            aimSprite.y = mainPlayerSprite.y;
             aimSprite.angle = currentAngle * 180/Math.PI;
         } else {
             aimSprite.visible = false;
@@ -164,20 +164,20 @@ function updateHealth(name, health) {
 function initHealthBars() {
     // my healthbar
     mainPlayerhealthbar = game.add.sprite(game.width/2, 20, 'healthbar-main');
-    
+
     // center the healthbar a little more
     mainPlayerhealthbar.x -= mainPlayerhealthbar.width / 2;
-    
+
     mainPlayerRedBar = game.add.sprite(
-        game.width/2 - mainPlayerhealthbar.width/2, 
+        game.width/2 - mainPlayerhealthbar.width/2,
         20, 'healthbar-red'
     );
     mainPlayerRedBar.scale.x *= 3;
     mainPlayerRedBar.moveDown();
-    
+
     mainPlayerhealthbar.fixedToCamera = true;
     mainPlayerRedBar.fixedToCamera = true;
-    
+
     // init the healthbars for all the enemies
     for (var name in playerNames) {
         if (playerNames[name] !== mainPlayerName) {
@@ -191,15 +191,15 @@ function initHealthBars() {
 }
 
 function updateHealthBar () {
-    
+
     mainPlayerhealthbar.scale.x = mainPlayerHealth / 100;
-    
+
     for (var player in playerHealthBars) {
         // healthbar for enemies
         playerHealthBars[player].x = players[player].sprite.centerX - 13;
         playerHealthBars[player].y = players[player].sprite.centerY - 40;
         playerHealthBars[player].scale.x = players[player].health / 100;
-        
+
         // healthbar for enemies
         playerRedBars[player].x = players[player].sprite.centerX - 13;
         playerRedBars[player].y = players[player].sprite.centerY - 40;
@@ -270,7 +270,7 @@ function deleteSnowball(id) {
 
 function updateFormingSnowballBar() {
     if (formingSnowball) {
-        formingSnowballsText.text = "Building...\n\n" + 
+        formingSnowballsText.text = "Building...\n\n" +
             Math.floor(snowballCollectionPercentage*100) + "%";
     } else {
         formingSnowballsText.text = "";
@@ -286,7 +286,7 @@ function handleSnowballForming() {
             formingSnowball = true;
         }
 
-        var timeDiff = 
+        var timeDiff =
             getCurrentTime() - snowballCollectionStartTime;
 
         if (timeDiff >= SNOWBALL_COLLECT_TIME && numSnowballs < MAX_SNOWBALLS) {
@@ -329,7 +329,7 @@ function initText() {
         var nameTag = game.add.bitmapText(0,0, 'carrier_command', player, 8);
         nameTags[player] = nameTag;
     }
-    
+
     snowballsText.fixedToCamera = true;
     gameOverText.fixedToCamera = true;
     formingSnowballsText.fixedToCamera = true;
@@ -360,15 +360,17 @@ function levelUpdate() {
     time = newTime;
     checkIfGameOver();
     updatePowerBar();
-    
+
     if (isLeftMouseButtonPressed() && numSnowballs > 0) {
         aiming = true;
         currentForce = (-Math.cos(
                 aimCounter*AIM_POWER_SPEED) + 1)/2;
-        currentAngle = getAngle(mainPlayerPosition.x,
-                    mainPlayerPosition.y, 
-                    getMouseX(), getMouseY());
-                    
+        // mainplayerPosition is position on the map
+        currentAngle = getAngle(mainPlayerPosition.x - game.camera.x + mainPlayerSprite.width/2,
+                                mainPlayerPosition.y - game.camera.y,
+                                getMouseX(), getMouseY());
+
+
         aimCounter++;
     } else {
         if (aiming) {
@@ -383,4 +385,3 @@ function levelUpdate() {
     }
     handleSnowballForming();
 }
-
