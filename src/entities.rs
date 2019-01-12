@@ -12,6 +12,13 @@ pub struct Player {
     pub on_ground: bool,
 }
 
+#[derive(Debug)]
+pub struct Snowball {
+    pub id: i32,
+    pub position: Vec2,
+    pub velocity: Vec2
+}
+
 impl Player {
     pub fn new(name: String) -> Self {
         Self {
