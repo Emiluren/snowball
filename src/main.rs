@@ -1,5 +1,9 @@
 extern crate tungstenite as ts;
 
+mod entities;
+mod vec2;
+mod lobby;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::net::{TcpListener, TcpStream};
@@ -8,41 +12,8 @@ use std::thread;
 use std::vec::Vec;
 use tungstenite::handshake::server::Request;
 use tungstenite::protocol::Role;
-
-#[derive(Debug)]
-struct Player {
-    pub name: String,
-    // TODO: add other fields
-}
-
-#[derive(Debug)]
-struct Lobby {
-    pub clients: HashMap<String, Client>,
-    // TODO: add snowballs
-    // TODO: add thread
-}
-
-impl Lobby {
-    pub fn send_to_others(&mut self, username: &str, message: &str) {
-        let message = ts::Message::Text(message.to_string());
-        for (client_name, client) in &mut self.clients {
-            if client_name != username {
-                client.websocket.write_message(message.clone()).unwrap();
-            }
-        }
-    }
-}
-
-struct Client {
-    pub websocket: ts::WebSocket<TcpStream>,
-    pub player: Player,
-}
-
-impl std::fmt::Debug for Client {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.debug_struct("Client").field("player", &self.player).finish()
-    }
-}
+use crate::entities::Player;
+use crate::lobby::{Lobby, Client};
 
 fn parse_request(path: &str) -> Option<(String, String)> {
     let lobby_and_username: Vec<_> = path.split('/').filter(|s| !s.is_empty()).collect();
@@ -62,16 +33,15 @@ fn add_new_client_to_lobby(
     let mut lobbies = lobbies.lock().unwrap();
 
     let lobby = lobbies.entry(lobby_name.to_string()).or_insert(Lobby {
-        clients: HashMap::new()
+        clients: HashMap::new(),
+        snowballs: HashMap::new(),
     });
 
     // TODO: check if game is already running here
 
     lobby.clients.insert(username.to_string(), Client {
         websocket: websocket,
-        player: Player {
-            name: username.to_string(),
-        },
+        player: Player::new(username.to_string()),
     });
 }
 
