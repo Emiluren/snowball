@@ -1,5 +1,8 @@
 extern crate tungstenite as ts;
 
+mod entities;
+mod vec2;
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::net::{TcpListener, TcpStream};
@@ -8,12 +11,8 @@ use std::thread;
 use std::vec::Vec;
 use ts::handshake::server::Request;
 use ts::protocol::Role;
+use entities::Player;
 
-#[derive(Debug)]
-struct Player {
-    pub name: String,
-    // TODO: add other fields
-}
 
 #[derive(Debug)]
 struct Lobby {
@@ -69,9 +68,7 @@ fn add_new_client_to_lobby(
 
     lobby.clients.insert(username.to_string(), Client {
         websocket: websocket,
-        player: Player {
-            name: username.to_string(),
-        },
+        player: Player::new(username.to_string()),
     });
 }
 
