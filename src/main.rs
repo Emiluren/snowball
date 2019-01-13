@@ -32,10 +32,7 @@ fn add_new_client_to_lobby(
 ) {
     let mut lobbies = lobbies.lock().unwrap();
 
-    let lobby = lobbies.entry(lobby_name.to_string()).or_insert(Lobby {
-        clients: HashMap::new(),
-        snowballs: HashMap::new(),
-    });
+    let lobby = lobbies.entry(lobby_name.to_string()).or_insert(Lobby::new());
 
     // TODO: check if game is already running here
 
@@ -131,7 +128,7 @@ fn handle_message(
     let message_type = split_message[0];
     let message_content = split_message.get(1).unwrap_or(&"");
 
-    let mut lobby = lobbies.get_mut(&*lobby_name).unwrap();
+    let mut lobby = &mut lobbies.get_mut(&*lobby_name).unwrap();
 
     match message_type {
         "chat" => {
@@ -143,6 +140,14 @@ fn handle_message(
                 &username,
                 &format!("chat:{}", &message_string),
             );
+        },
+        "start game" => {
+            let lobby_name = lobby_name.to_owned();
+            if lobby.thread.is_none() {
+                lobby.thread = Some(thread::spawn(move || {
+                    println!("Game loop started for {}", lobby_name);
+                }));
+            }
         },
         _ => println!("Unknown message type: {}", message_text),
     }
