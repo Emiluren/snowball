@@ -3,6 +3,8 @@ extern crate tungstenite as ts;
 mod entities;
 mod vec2;
 mod lobby;
+mod level;
+mod game;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
