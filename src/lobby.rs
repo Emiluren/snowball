@@ -1,14 +1,14 @@
-use std::collections::HashMap;
 use crate::entities::{Player, Snowball};
+use std::collections::HashMap;
 use std::net::TcpStream;
+use std::thread::JoinHandle;
 use tungstenite as ts;
 
 #[derive(Debug)]
 pub struct Lobby {
     pub clients: HashMap<String, Client>,
-    pub snowballs: HashMap<i32, Snowball>
-    // TODO: add snowballs
-    // TODO: add thread
+    pub snowballs: HashMap<i32, Snowball>,
+    pub thread: Option<JoinHandle<()>>,
 }
 
 pub struct Client {
@@ -17,6 +17,14 @@ pub struct Client {
 }
 
 impl Lobby {
+    pub fn new() -> Self {
+        Lobby {
+            clients: HashMap::new(),
+            snowballs: HashMap::new(),
+            thread: None,
+        }
+    }
+
     pub fn send_to_others(&mut self, username: &str, message: &str) {
         let message = ts::Message::Text(message.to_string());
         for (client_name, client) in &mut self.clients {
