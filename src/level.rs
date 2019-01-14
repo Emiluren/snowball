@@ -2,11 +2,7 @@ use crate::lobby::{Lobby, Client};
 use crate::entities::Player;
 use std::collections::HashMap;
 
-
-//struct JSONMap {
-//    pub layers: 
-//}
-
+pub const TILE_SIZE: i32 = 20;
 
 pub enum Collider {
     Player(Player),
@@ -17,7 +13,7 @@ pub enum Collider {
 
 
 pub fn load_level() {
-
+    
 }
 
 

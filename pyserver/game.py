@@ -23,6 +23,7 @@ RUN_ACCELERATION = 1.0
 GRAVITY_ACCELERATION = 1.3
 PLAYER_MAX_SPEED = 10
 
+
 def run_main_loop(lobby, stop_event, event_loop):
     for client in lobby.clients.values():
         while True:
