@@ -1,12 +1,15 @@
 use crate::lobby::{Lobby, Client};
 use crate::entities::Player;
+use crate::vec2::*;
 use std::collections::HashMap;
 use crate::maploading;
 
 pub const TILE_SIZE: usize = 20;
+pub const PLAYER_WIDTH: usize = 40;
+pub const PLAYER_HEIGHT: usize = 60;
 
 pub enum Collider {
-    Player(Player),
+    Player(String),
     Tile(i32, i32),
     ScreenBorder,
     NoCollision,
@@ -43,17 +46,31 @@ pub fn can_move_to(width: usize, height: usize, new_x: i32, new_y: i32,
             }
         }
     }
-    // TODO this doesnt compile
-    // match lobby {
-    //     Some (lobby) => {
-    //         for (name, client) in lobby.clients {
-    //             let pos = client.player.position;
-    //             return Collider::Player(client.player)
-    //         }
-    //         Collider::NoCollision
-    //     }
-    //     None => Collider::NoCollision
-    // }
-    Collider::NoCollision
+
+    match lobby {
+        Some(lobby) => {
+            for (name, client) in &lobby.clients {
+                let pos: Vec2 = client.player.position;
+                if overlaps(new_x,
+                            new_x + width as i32, 
+                            pos.x as i32,
+                            pos.x as i32 + PLAYER_WIDTH as i32)
+                    &&
+                    overlaps(new_y,
+                             new_y + height as i32, 
+                             pos.y as i32,
+                             pos.y as i32 + PLAYER_HEIGHT as i32) {
+                        return Collider::Player(name.to_string());
+                    }
+            }
+            Collider::NoCollision
+        },
+        None => Collider::NoCollision
+    }
+}
+
+
+fn overlaps(a1: i32, a2: i32, b1: i32, b2: i32) -> bool {
+    a1.max(b1) <= b2.min(a2)
 }
 
