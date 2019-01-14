@@ -33,7 +33,7 @@ impl Map {
         self.data[x + y*self.width]
     }
 
-    pub fn is_transparent(self, x: usize, y: usize) -> bool {
+    pub fn is_transparent(&self, x: usize, y: usize) -> bool {
         self.get_cell(x, y) == 0
     }
 
