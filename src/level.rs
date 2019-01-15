@@ -32,10 +32,10 @@ pub fn can_move_to(width: usize, height: usize, new_x: i32, new_y: i32,
     }
 
     if new_y >= 0 {
-        let left: i32 = new_x / (TILE_SIZE as i32);
-        let right: i32 = (new_x + (width as i32)) / (TILE_SIZE as i32);
-        let top: i32 = new_y / (TILE_SIZE as i32);
-        let bottom: i32 = (new_y + (height as i32)) / (TILE_SIZE as i32);
+        let left = new_x / (TILE_SIZE as i32);
+        let right = (new_x + (width as i32)) / (TILE_SIZE as i32);
+        let top = new_y / (TILE_SIZE as i32);
+        let bottom = (new_y + (height as i32)) / (TILE_SIZE as i32);
 
         for y in top..bottom+1 {
             for x in left..right+1 {
