@@ -1,2 +1,2 @@
 #!/bin/sh
-OPENSSL_INCLUDE_DIR=/usr/include/openssl cargo build
+OPENSSL_LIB_DIR=/usr/lib/openssl-1.0 OPENSSL_INCLUDE_DIR=/usr/include/openssl-1.0 cargo build
