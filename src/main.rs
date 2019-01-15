@@ -5,6 +5,7 @@ mod vec2;
 mod lobby;
 mod level;
 mod game;
+mod maploading;
 
 use std::cell::RefCell;
 use std::collections::HashMap;

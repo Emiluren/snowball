@@ -2,11 +2,12 @@ use std::ops::Add;
 use std::ops::Sub;
 
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32
 }
+
 
 impl Add for Vec2 {
     type Output = Vec2;
