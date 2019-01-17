@@ -26,7 +26,7 @@ pub fn is_outside_screen(width: usize, height: usize, new_x: i32, new_y: i32,
 
 pub fn can_move_to(width: usize, height: usize, new_x: i32, new_y: i32,
                    tile_map: &maploading::Map,
-                   lobby: Option<&Lobby>) -> Collider {
+                   players: &Option<HashMap<String, &Player>>) -> Collider {
     if is_outside_screen(width, height, new_x, new_y, tile_map) {
         return Collider::ScreenBorder;
     }
@@ -47,10 +47,10 @@ pub fn can_move_to(width: usize, height: usize, new_x: i32, new_y: i32,
         }
     }
 
-    match lobby {
-        Some(lobby) => {
-            for (name, client) in &lobby.clients {
-                let pos: Vec2 = client.player.position;
+    match players {
+        Some(players) => {
+            for (name, player) in players {
+                let pos: Vec2 = player.position;
                 if overlaps(new_x,
                             new_x + width as i32, 
                             pos.x as i32,
