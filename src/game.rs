@@ -3,6 +3,7 @@ use crate::entities::{Player, Snowball};
 use std::collections::HashMap;
 use std::collections::hash_map::Values;
 use std::sync::{Arc, Mutex};
+use std::sync::mpsc::{self, Receiver};
 use crate::maploading;
 use crate::level;
 use rand::{self, Rng};
@@ -13,7 +14,7 @@ const MAP_FILE: &str = "../public/assets/map.json";
 const GRAVITY_ACCELERATION: f32 = 1.3;
 const PLAYER_MAX_SPEED: f32 = 10.;
 
-pub fn run_main_loop(lobby_arc: Arc<Mutex<Lobby>>) {
+pub fn run_main_loop(lobby_arc: Arc<Mutex<Lobby>>, thread_killer: Receiver<()>) {
     let tile_map = maploading::load_tile_map(MAP_FILE);
     let mut lobby = lobby_arc.lock().unwrap();
     init_players(&mut lobby, &tile_map);
@@ -22,6 +23,11 @@ pub fn run_main_loop(lobby_arc: Arc<Mutex<Lobby>>) {
     loop {
         // TODO update players
         //update_players(&players);
+
+        if let Ok(()) = thread_killer.try_recv() {
+            println!("Stop signal received, shutting down game thread");
+            break;
+        }
     }
 }
 

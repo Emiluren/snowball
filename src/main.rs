@@ -1,5 +1,3 @@
-extern crate tungstenite as ts;
-
 mod entities;
 mod vec2;
 mod lobby;
@@ -9,23 +7,16 @@ mod maploading;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::net::{TcpListener, TcpStream};
+use std::net::TcpListener;
 use std::sync::{Arc, Mutex, mpsc::channel};
 use std::thread;
 use std::vec::Vec;
+use tungstenite::{accept_hdr, WebSocket};
 use tungstenite::handshake::server::Request;
+use tungstenite::Message;
 use tungstenite::protocol::Role;
 use crate::entities::Player;
 use crate::lobby::{Lobby, Client};
-
-fn parse_request(path: &str) -> Option<(String, String)> {
-    let lobby_and_username: Vec<_> = path.split('/').filter(|s| !s.is_empty()).collect();
-
-    match lobby_and_username.as_slice() {
-        &[lobby, username] => Some((lobby.to_string(), username.to_string())),
-        _ => None
-    }
-}
 
 fn main() {
     let mut lobbies = HashMap::new();
@@ -44,6 +35,7 @@ fn main() {
         let (lobby_name_transmitter, lobby_name_receiver) = channel();
         let (lobby_arc_transmitter, lobby_arc_receiver) = channel();
 
+        // TODO: maybe move closure to a function
         thread::spawn(move || {
             let mut con = init_connection(&stream);
             println!("{} has joined {}", &con.username, &con.lobby_name);
@@ -51,79 +43,83 @@ fn main() {
             lobby_name_transmitter.send(con.lobby_name.clone()).unwrap();
             let lobby_arc: Arc<Mutex<Lobby>> = lobby_arc_receiver.recv().unwrap();
 
-            {
-                let mut lobby = lobby_arc.lock().unwrap();
-                lobby.clients.insert(con.username.clone(), Client {
-                    websocket: ts::WebSocket::from_raw_socket(stream, Role::Server),
-                    player: Player::new(con.username.clone()),
-                });
-            }
+            let player_add_successful =
+                add_player_to_lobby(lobby_arc.clone(), &con, stream);
 
-            loop {
-                let message = con.websocket.read_message();
+            if player_add_successful {
+                loop {
+                    let message = con.websocket.read_message();
 
-                match message {
-                    Ok(msg) => {
-                        handle_message(
-                            lobby_arc.clone(),
-                            msg,
-                            &con.lobby_name,
-                            &con.username,
-                        );
-                    },
-                    _ => {
-                        println!("{} disconnected from {}", &con.username, &con.lobby_name);
-                        let deleted_last = {
+                    match message {
+                        Ok(msg) => {
+                            handle_message(
+                                lobby_arc.clone(),
+                                msg,
+                                &con.lobby_name,
+                                &con.username,
+                            );
+                        },
+                        _ => {
+                            // The player disconnected, remove them
+                            println!("{} disconnected from {}", &con.username, &con.lobby_name);
                             let mut lobby = lobby_arc.lock().unwrap();
                             lobby.clients.remove(&con.username);
-                            lobby.clients.is_empty()
-                        };
-                        if deleted_last {
-                            // TODO: stop game thread if it is running
-                            println!("The last person left {}. Removing that lobby (NOT IMPLEMENTED)", &con.lobby_name);
-                            lobby_closer_transmitter.send(con.lobby_name.clone()).unwrap();
+
+                            // Stop game thread if it's running
+                            if let Some(thread_killer) = &lobby.game_thread {
+                                thread_killer.send(()).unwrap();
+                            }
+
+                            // Remove the lobby if the last player left
+                            if lobby.clients.is_empty() {
+                                println!("The last person left {}. Removing that lobby", &con.lobby_name);
+                                lobby_closer_transmitter.send(con.lobby_name.clone()).unwrap();
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
         });
 
+        // Check for any lobbies to remove
+        while let Ok(lobby_to_close) = lobby_closer_receiver.try_recv() {
+            lobbies.remove(&lobby_to_close);
+        }
+
+        // Find the requested lobby or create it if it does not already exist
         let lobby_name = lobby_name_receiver.recv().unwrap();
-        let mut lobby_arc = lobbies.entry(lobby_name).or_insert(
+        let lobby_arc = lobbies.entry(lobby_name).or_insert(
             Arc::new(Mutex::new(Lobby::new()))
         );
         lobby_arc_transmitter.send(lobby_arc.clone()).unwrap();
-
-        // Check for lobbies to close
-        // TODO: should probably be 
-        // lobbies.remove(&con.lobby_name);
     }
 }
 
 struct Connection {
     lobby_name: String,
     username: String,
-    websocket: ts::WebSocket<std::net::TcpStream>,
+    websocket: WebSocket<std::net::TcpStream>,
 }
 
 fn init_connection(stream: &std::net::TcpStream) -> Connection {
     let username = RefCell::new(String::new());
     let lobby_name = RefCell::new(String::new());
-    let callback = |req: &Request| {
-        match parse_request(&req.path) {
-            Some((ln, un)) => {
-                lobby_name.replace(ln);
-                username.replace(un);
-                Ok(None)
-            }
-            None => Err(ts::Error::Http(400))
-        }
-    };
 
-    let mut websocket = ts::accept_hdr(
+    let websocket = accept_hdr(
         stream.try_clone().unwrap(),
-        callback
+        |req: &Request| {
+            let lobby_and_username: Vec<_> = req.path.split('/').filter(|s| !s.is_empty()).collect();
+
+            match lobby_and_username.as_slice() {
+                &[lobby, user] => {
+                    lobby_name.replace(lobby.to_string());
+                    username.replace(user.to_string());
+                    Ok(None)
+                }
+                _ => Err(tungstenite::Error::Http(400))
+            }
+        }
     ).unwrap();
     let lobby_name = lobby_name.borrow();
     let username = username.borrow();
@@ -135,9 +131,33 @@ fn init_connection(stream: &std::net::TcpStream) -> Connection {
     }
 }
 
+fn add_player_to_lobby(lobby_arc: Arc<Mutex<Lobby>>, con: &Connection, stream: std::net::TcpStream) -> bool {
+    let mut lobby = lobby_arc.lock().unwrap();
+    let mut out_going_socket = WebSocket::from_raw_socket(stream, Role::Server, None);
+
+    if lobby.game_thread.is_some() {
+        // Game is already running, tell player to find another lobby
+        println!("{} is already playing!", &con.lobby_name);
+        let msg = format!(
+            "chat:(Server) This lobby ({}) is already playing a game. {} cannot join now.",
+            &con.lobby_name,
+            &con.username
+        );
+        out_going_socket.write_message(Message::Text(msg)).unwrap();
+        return false;
+    }
+
+    lobby.clients.insert(con.username.clone(), Client {
+        websocket: out_going_socket,
+        player: Player::new(con.username.clone()),
+    });
+    true
+}
+
+
 fn handle_message(
     lobby_arc: Arc<Mutex<Lobby>>,
-    msg: ts::protocol::Message,
+    msg: tungstenite::protocol::Message,
     lobby_name: &str,
     username: &str,
 ) {
@@ -164,16 +184,15 @@ fn handle_message(
             );
         },
         "start game" => {
-            // TODO: start game
             let lobby_arc_clone = lobby_arc.clone();
             let mut lobby = lobby_arc.lock().unwrap();
-            if !lobby.game_started {
-                // TODO: Store the join handle somewhere so we can stop the
-                // thread if all clients leave.
-                let thread = Some(thread::spawn(move || {
-                    game::run_main_loop(lobby_arc_clone);
-                }));
-                lobby.game_started = true;
+            if lobby.game_thread.is_none() {
+                let (thread_kill_sender, thread_kill_receiver) = channel();
+                thread::spawn(move || {
+                    game::run_main_loop(lobby_arc_clone, thread_kill_receiver);
+                });
+
+                lobby.game_thread = Some(thread_kill_sender);
             }
         },
         _ => println!("Unknown message type: {}", message_text),
