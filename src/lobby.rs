@@ -7,6 +7,7 @@ use tungstenite as ts;
 pub struct Lobby {
     pub clients: HashMap<String, Client>,
     pub snowballs: HashMap<i32, Snowball>,
+    pub game_started: bool,
 }
 
 pub struct Client {
@@ -19,6 +20,7 @@ impl Lobby {
         Lobby {
             clients: HashMap::new(),
             snowballs: HashMap::new(),
+            game_started: false,
         }
     }
 

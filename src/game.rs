@@ -2,6 +2,7 @@ use crate::lobby::{Lobby, Client};
 use crate::entities::{Player, Snowball};
 use std::collections::HashMap;
 use std::collections::hash_map::Values;
+use std::sync::{Arc, Mutex};
 use crate::maploading;
 use crate::level;
 use rand::{self, Rng};
@@ -12,9 +13,10 @@ const MAP_FILE: &str = "../public/assets/map.json";
 const GRAVITY_ACCELERATION: f32 = 1.3;
 const PLAYER_MAX_SPEED: f32 = 10.;
 
-pub fn run_main_loop(lobby: &mut Lobby) {
+pub fn run_main_loop(lobby_arc: Arc<Mutex<Lobby>>) {
     let tile_map = maploading::load_tile_map(MAP_FILE);
-    init_players(lobby, &tile_map);
+    let mut lobby = lobby_arc.lock().unwrap();
+    init_players(&mut lobby, &tile_map);
 
     let mut players: Vec<&mut Player> = lobby.clients.values_mut().map(|client| &mut client.player).collect();
     loop {
