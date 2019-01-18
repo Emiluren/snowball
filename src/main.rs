@@ -17,6 +17,7 @@ use tungstenite::Message;
 use tungstenite::protocol::Role;
 use crate::entities::Player;
 use crate::lobby::{Lobby, Client};
+use crate::game::GameEvent;
 
 fn main() {
     let mut lobbies = HashMap::new();
@@ -66,8 +67,8 @@ fn main() {
                             lobby.clients.remove(&con.username);
 
                             // Stop game thread if it's running
-                            if let Some(thread_killer) = &lobby.game_thread {
-                                thread_killer.send(()).unwrap();
+                            if let Some(channel) = &lobby.game_thread_channel {
+                                channel.send(GameEvent::Stop).unwrap();
                             }
 
                             // Remove the lobby if the last player left
@@ -135,8 +136,9 @@ fn add_player_to_lobby(lobby_arc: Arc<Mutex<Lobby>>, con: &Connection, stream: s
     let mut lobby = lobby_arc.lock().unwrap();
     let mut out_going_socket = WebSocket::from_raw_socket(stream, Role::Server, None);
 
-    if lobby.game_thread.is_some() {
+    if lobby.game_thread_channel.is_some() {
         // Game is already running, tell player to find another lobby
+        // TODO: check that there's not already another player with the same name
         println!("{} is already playing!", &con.lobby_name);
         let msg = format!(
             "chat:(Server) This lobby ({}) is already playing a game. {} cannot join now.",
@@ -171,30 +173,54 @@ fn handle_message(
     let message_type = split_message[0];
     let message_content = split_message.get(1).unwrap_or(&"");
 
+    let mut lobby = lobby_arc.lock().unwrap();
+
     match message_type {
         "chat" => {
             let message_string = format!(
                 "({}) {}: {}", lobby_name, username, message_content
             );
             println!("{}", message_string);
-            let mut lobby = lobby_arc.lock().unwrap();
             lobby.send_to_others(
                 &username,
                 &format!("chat:{}", &message_string),
             );
-        },
+        }
         "start game" => {
             let lobby_arc_clone = lobby_arc.clone();
-            let mut lobby = lobby_arc.lock().unwrap();
-            if lobby.game_thread.is_none() {
-                let (thread_kill_sender, thread_kill_receiver) = channel();
+            if lobby.game_thread_channel.is_none() {
+                let (game_event_sender, game_event_receiver) = channel();
                 thread::spawn(move || {
-                    game::run_main_loop(lobby_arc_clone, thread_kill_receiver);
+                    game::run_main_loop(lobby_arc_clone, game_event_receiver);
                 });
 
-                lobby.game_thread = Some(thread_kill_sender);
+                lobby.game_thread_channel = Some(game_event_sender);
             }
-        },
-        _ => println!("Unknown message type: {}", message_text),
+        }
+        "key down" => {
+            let mut client = lobby.clients.get_mut(username).unwrap();
+            match *message_content {
+                "left" => client.player.left_pressed = true,
+                "right" => client.player.right_pressed = true,
+                _ => println!("Unknown key {}", message_content),
+            }
+        }
+        "key up" => {
+            let mut client = lobby.clients.get_mut(username).unwrap();
+            match *message_content {
+                "left" => client.player.left_pressed = false,
+                "right" => client.player.right_pressed = false,
+                _ => println!("Unknown key {}", message_content),
+            }
+        }
+        "jump" => {
+            match &lobby.game_thread_channel {
+                None => println!("Received jump event but game is not running"),
+                Some(channel) => channel.send(GameEvent::Jump).unwrap(),
+            }
+        }
+        "fire" => {
+        }
+        _ => println!("Unknown message type: {}", message_text)
     }
 }

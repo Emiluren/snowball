@@ -1,4 +1,5 @@
 use crate::entities::{Player, Snowball};
+use crate::game::GameEvent;
 use std::collections::HashMap;
 use std::net::TcpStream;
 use std::sync::mpsc::Sender;
@@ -8,7 +9,7 @@ use tungstenite as ts;
 pub struct Lobby {
     pub clients: HashMap<String, Client>,
     pub snowballs: HashMap<i32, Snowball>,
-    pub game_thread: Option<Sender<()>>,
+    pub game_thread_channel: Option<Sender<GameEvent>>,
 }
 
 pub struct Client {
@@ -21,7 +22,7 @@ impl Lobby {
         Lobby {
             clients: HashMap::new(),
             snowballs: HashMap::new(),
-            game_thread: None,
+            game_thread_channel: None,
         }
     }
 

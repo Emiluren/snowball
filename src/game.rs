@@ -16,20 +16,34 @@ const GRAVITY_ACCELERATION: f32 = 1.3;
 const PLAYER_MAX_SPEED: f32 = 10.;
 const SNOWBALL_DAMAGE: f32 = 0.5;
 
-pub fn run_main_loop(lobby_arc: Arc<Mutex<Lobby>>, thread_killer: Receiver<()>) {
+pub enum GameEvent {
+    Stop,
+    Jump,
+    Fire(f32, f32),
+}
+
+pub fn run_main_loop(lobby_arc: Arc<Mutex<Lobby>>, event_receiver: Receiver<GameEvent>) {
     let tile_map = maploading::load_tile_map(MAP_FILE);
     let mut lobby = lobby_arc.lock().unwrap();
     init_players(&mut lobby, &tile_map);
 
     let mut players: Vec<&mut Player> = lobby.clients.values_mut().map(|client| &mut client.player).collect();
-    loop {
+    'main: loop {
+        while let Ok(msg) = event_receiver.try_recv() {
+            match msg {
+                Stop => {
+                    println!("Stop signal received, shutting down game thread");
+                    break 'main;
+                }
+                Jump => {
+                }
+                GameEvent::Fire(angle, force) => {
+                }
+            }
+        }
+
         // TODO update players
         //update_players(&players);
-
-        if let Ok(()) = thread_killer.try_recv() {
-            println!("Stop signal received, shutting down game thread");
-            break;
-        }
     }
 }
 
