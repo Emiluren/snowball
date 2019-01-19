@@ -31,11 +31,11 @@ pub fn run_main_loop(lobby_arc: Arc<Mutex<Lobby>>, event_receiver: Receiver<Game
     'main: loop {
         while let Ok(msg) = event_receiver.try_recv() {
             match msg {
-                Stop => {
+                GameEvent::Stop => {
                     println!("Stop signal received, shutting down game thread");
                     break 'main;
                 }
-                Jump => {
+                GameEvent::Jump => {
                 }
                 GameEvent::Fire(angle, force) => {
                 }

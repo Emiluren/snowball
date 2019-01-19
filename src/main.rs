@@ -220,6 +220,14 @@ fn handle_message(
             }
         }
         "fire" => {
+            match message_content.split(' ').collect::<Vec<_>>().as_slice() {
+                [angle, force] => {
+                    if let (Ok(a), Ok(f), Some(ch)) = (angle.parse(), force.parse(), &lobby.game_thread_channel) {
+                        ch.send(GameEvent::Fire(a, f)).unwrap();
+                    }
+                }
+                _ => println!("{} did not match fire specification", message_content)
+            }
         }
         _ => println!("Unknown message type: {}", message_text)
     }
