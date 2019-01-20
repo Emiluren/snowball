@@ -1,6 +1,6 @@
 use crate::vec2::Vec2;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Player {
     pub name: String,
     pub health: u32,
@@ -14,7 +14,7 @@ pub struct Player {
 
 #[derive(Debug)]
 pub struct Snowball {
-    pub id: i32,
+    pub id: usize,
     pub position: Vec2,
     pub velocity: Vec2
 }

@@ -17,7 +17,6 @@ use tungstenite::Message;
 use tungstenite::protocol::Role;
 use crate::entities::Player;
 use crate::lobby::{Lobby, Client};
-use crate::game::GameEvent;
 
 fn main() {
     let mut lobbies = HashMap::new();
@@ -68,7 +67,7 @@ fn main() {
 
                             // Stop game thread if it's running
                             if let Some(channel) = &lobby.game_thread_channel {
-                                channel.send(GameEvent::Stop).unwrap();
+                                channel.send(()).unwrap();
                             }
 
                             // Remove the lobby if the last player left
@@ -174,6 +173,7 @@ fn handle_message(
     let message_content = split_message.get(1).unwrap_or(&"");
 
     let mut lobby = lobby_arc.lock().unwrap();
+    let mut client = lobby.clients.get_mut(username).unwrap();
 
     match message_type {
         "chat" => {
@@ -198,7 +198,6 @@ fn handle_message(
             }
         }
         "key down" => {
-            let mut client = lobby.clients.get_mut(username).unwrap();
             match *message_content {
                 "left" => client.player.left_pressed = true,
                 "right" => client.player.right_pressed = true,
@@ -206,7 +205,6 @@ fn handle_message(
             }
         }
         "key up" => {
-            let mut client = lobby.clients.get_mut(username).unwrap();
             match *message_content {
                 "left" => client.player.left_pressed = false,
                 "right" => client.player.right_pressed = false,
@@ -214,17 +212,15 @@ fn handle_message(
             }
         }
         "jump" => {
-            match &lobby.game_thread_channel {
-                None => println!("Received jump event but game is not running"),
-                Some(channel) => channel.send(GameEvent::Jump).unwrap(),
-            }
+            game::jump(&mut lobby.clients.get_mut(username).unwrap().player);
+            // TODO: Send jump audio command
         }
         "fire" => {
-            match message_content.split(' ').collect::<Vec<_>>().as_slice() {
-                [angle, force] => {
-                    if let (Ok(a), Ok(f), Some(ch)) = (angle.parse(), force.parse(), &lobby.game_thread_channel) {
-                        ch.send(GameEvent::Fire(a, f)).unwrap();
-                    }
+            let angle_and_force = message_content.split(' ').map(|v| v.parse()).collect::<Vec<_>>();
+            match angle_and_force.as_slice() {
+                [Ok(angle), Ok(force)] => {
+                    let player_pos = client.player.position;
+                    game::create_snowball(&mut lobby, player_pos, *angle, *force);
                 }
                 _ => println!("{} did not match fire specification", message_content)
             }

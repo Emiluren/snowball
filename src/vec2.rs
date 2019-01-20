@@ -1,13 +1,11 @@
 use std::ops::Add;
 use std::ops::Sub;
 
-
 #[derive(Debug, Copy, Clone)]
 pub struct Vec2 {
     pub x: f32,
     pub y: f32
 }
-
 
 impl Add for Vec2 {
     type Output = Vec2;
@@ -39,10 +37,10 @@ impl Vec2 {
         }
     }
 
-    pub fn from_direction(angle: f32, length: i32) -> Self {
+    pub fn from_direction(angle: f32, length: f32) -> Self {
         Vec2 {
-            x: angle.cos()*(length as f32),
-            y: angle.sin()*(length as f32),
+            x: angle.cos() * length,
+            y: angle.sin() * length,
         }
     }
 

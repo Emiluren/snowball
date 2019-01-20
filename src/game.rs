@@ -1,60 +1,116 @@
 use crate::lobby::{Lobby, Client};
 use crate::entities::{Player, Snowball};
-use std::collections::HashMap;
-use std::collections::hash_map::Values;
-use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{self, Receiver};
 use crate::maploading;
 use crate::level;
-use rand::{self, Rng};
 use crate::vec2::Vec2;
+
+use rand;
+use rand::distributions::{Distribution, Uniform};
+
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc::Receiver;
 use std::vec;
+use std::thread::sleep;
+use std::time::Duration;
 
 const MAP_FILE: &str = "../public/assets/map.json";
 
 const GRAVITY_ACCELERATION: f32 = 1.3;
 const PLAYER_MAX_SPEED: f32 = 10.;
+const MAX_THROWING_FORCE: f32 = 30.;
+const SNOWBALL_SPAWN_DISTANCE: f32 = 30.;
 const SNOWBALL_DAMAGE: f32 = 0.5;
 
-pub enum GameEvent {
-    Stop,
-    Jump,
-    Fire(f32, f32),
-}
-
-pub fn run_main_loop(lobby_arc: Arc<Mutex<Lobby>>, event_receiver: Receiver<GameEvent>) {
+pub fn run_main_loop(lobby_arc: Arc<Mutex<Lobby>>, thread_killer: Receiver<()>) {
     let tile_map = maploading::load_tile_map(MAP_FILE);
-    let mut lobby = lobby_arc.lock().unwrap();
-    init_players(&mut lobby, &tile_map);
+    {
+        let mut lobby = lobby_arc.lock().unwrap();
+        init_players(&mut lobby, &tile_map);
+    }
 
-    let mut players: Vec<&mut Player> = lobby.clients.values_mut().map(|client| &mut client.player).collect();
-    'main: loop {
-        while let Ok(msg) = event_receiver.try_recv() {
-            match msg {
-                GameEvent::Stop => {
-                    println!("Stop signal received, shutting down game thread");
-                    break 'main;
-                }
-                GameEvent::Jump => {
-                }
-                GameEvent::Fire(angle, force) => {
-                }
-            }
+    loop {
+        if let Ok(()) = thread_killer.try_recv() {
+            println!("Stop signal received, shutting down game thread");
+            break;
         }
 
-        // TODO update players
-        //update_players(&players);
+        // Sleep before locking lobby so that the main thread has a chance to
+        // access it
+        sleep(Duration::from_millis(1000 / 30));
+
+        let mut lobby = lobby_arc.lock().unwrap();
+        update_players(&mut lobby.clients, &tile_map);
+        let (changed_healths, destroyed_snowballs, player_hit, ground_hit) =
+            update_snowballs(&mut lobby, &tile_map);
+
+        // Broadcast changed healths
+        for player in &changed_healths {
+            let health = lobby.clients[player].player.health;
+            lobby.broadcast(&format!("health:{} {}", player, health))
+        }
+
+        // Broadcasts destroyed snowballs
+        for ball_id in &destroyed_snowballs {
+            lobby.broadcast(&format!("delete ball:{}", ball_id))
+        }
+
+        // Broadcast snowball positions
+        if !lobby.snowballs.is_empty() {
+            // TODO: simulate snowballs on clients so they don't need to be
+            // synced
+            let mut message = "snowballs:".to_string();
+            for snowball in lobby.snowballs.values() {
+                message.push_str(&format!(
+                    "{} {} {}",
+                    snowball.id,
+                    snowball.position.x,
+                    snowball.position.y,
+                ));
+            }
+            lobby.broadcast(&message);
+        }
+
+        if player_hit {
+            // TODO: broadcast player hit audio
+        }
+
+        if ground_hit {
+            // TODO: broadcast ground hit audio
+        }
+
+        // Broadcast player positions
+        let player_data: Vec<_> =
+            lobby.clients.values().map(
+                |c| (
+                    c.player.name.clone(),
+                    c.player.position.x,
+                    c.player.position.y,
+                )
+            ).collect();
+        for (name, x, y) in player_data {
+            lobby.broadcast(&format!("position:{} {} {}", name, x, y));
+        }
+    }
+}
+
+pub fn jump(player: &mut Player) {
+    if player.on_ground {
+        player.velocity = Vec2 {
+            x: player.velocity.x,
+            y: player.velocity.y - 20.
+        };
     }
 }
 
 fn init_players(lobby: &mut Lobby, tile_map: &maploading::Map) {
     for (_, client) in &mut lobby.clients {
         loop {
+            let x_dist = Uniform::from(0..tile_map.width);
+            let y_dist = Uniform::from(0..tile_map.height);
             let mut rng = rand::thread_rng();
-            let rx_f: f32 = rng.gen();
-            let ry_f: f32 = rng.gen();
-            let rx: i32 = (rx_f*(tile_map.width as f32)) as i32;
-            let ry: i32 = (ry_f*(tile_map.height as f32)) as i32;
+            let rx = x_dist.sample(&mut rng) as i32;
+            let ry = y_dist.sample(&mut rng) as i32;
 
             let collider = level::can_move_to(level::PLAYER_WIDTH,
                                               level::PLAYER_HEIGHT,
@@ -70,7 +126,6 @@ fn init_players(lobby: &mut Lobby, tile_map: &maploading::Map) {
         }
     }
 }
-
 
 fn update_player(player: &mut Player, tile_map: &maploading::Map) {
     // feel free to un-shittify this shitty translated python code
@@ -135,13 +190,11 @@ fn update_player(player: &mut Player, tile_map: &maploading::Map) {
     }
 }
 
-
-fn update_players(players: Vec<&mut Player>, tile_map: &maploading::Map) {
-    for player in players {
-        update_player(player, tile_map);
+fn update_players(clients: &mut HashMap<String, Client>, tile_map: &maploading::Map) {
+    for client in clients.values_mut()  {
+        update_player(&mut client.player, tile_map);
     }
 }
-
 
 fn all_players(lobby: &Lobby) -> HashMap<String, &Player> {
     let mut result = HashMap::new();
@@ -151,10 +204,9 @@ fn all_players(lobby: &Lobby) -> HashMap<String, &Player> {
     result
 }
 
-
-fn update_snowballs(lobby: &mut Lobby, tile_map: &maploading::Map) {
-    let mut changed_healths: Vec<String> = Vec::new();
-    let mut destroyed_snowballs: Vec<i32> = Vec::new();
+fn update_snowballs(lobby: &mut Lobby, tile_map: &maploading::Map) -> (Vec<String>, Vec<usize>, bool, bool) {
+    let mut changed_healths = Vec::new();
+    let mut destroyed_snowballs = Vec::new();
 
     let mut player_hit = false;
     let mut ground_hit = false;
@@ -182,7 +234,7 @@ fn update_snowballs(lobby: &mut Lobby, tile_map: &maploading::Map) {
                 destroyed_snowballs.push(*id);
                 ground_hit = true;
             },
-            _ => { }
+            _ => {}
         }
     }
 
@@ -193,6 +245,27 @@ fn update_snowballs(lobby: &mut Lobby, tile_map: &maploading::Map) {
             as u32;
         changed_healths.push(player_name);
     }
-    // TODO not done yet
+
+    for id in &destroyed_snowballs {
+        lobby.snowballs.remove(&id);
+    }
+
+    (changed_healths, destroyed_snowballs, player_hit, ground_hit)
 }
 
+fn create_snowball_id(lobby: &Lobby) -> usize {
+    match lobby.snowballs.keys().max() {
+        None => 0,
+        Some(id) => id + 1,
+    }
+}
+
+pub fn create_snowball(lobby: &mut Lobby, pos: Vec2, angle: f32, force: f32) {
+    let direction = Vec2::from_direction(angle, 1.);
+    let snowball = Snowball {
+        id: create_snowball_id(lobby),
+        position: pos + direction.scale(SNOWBALL_SPAWN_DISTANCE),
+        velocity: direction.scale(force * MAX_THROWING_FORCE),
+    };
+    lobby.snowballs.insert(snowball.id, snowball);
+}
