@@ -16,7 +16,7 @@ pub enum Collider {
 
 pub fn is_outside_screen(width: usize, height: usize, new_x: i32, new_y: i32,
                          tile_map: &maploading::Map) -> bool {
-    new_x < 0 ||
+    new_x < 0 || new_y < 0 ||
     (new_x as usize) + width >= tile_map.width*TILE_SIZE ||
     (new_y as usize) + height >= tile_map.height*TILE_SIZE
 }
@@ -34,8 +34,8 @@ pub fn can_move_to(width: usize, height: usize, new_x: i32, new_y: i32,
         let top = new_y / (TILE_SIZE as i32);
         let bottom = (new_y + (height as i32)) / (TILE_SIZE as i32);
 
-        for y in top..bottom+1 {
-            for x in left..right+1 {
+        for y in top..=bottom {
+            for x in left..=right {
                 if !tile_map.is_transparent(x as usize, y as usize) {
                     return Collider::Tile(x*(TILE_SIZE as i32), 
                                           y*(TILE_SIZE as i32));
@@ -44,26 +44,23 @@ pub fn can_move_to(width: usize, height: usize, new_x: i32, new_y: i32,
         }
     }
 
-    match players {
-        Some(players) => {
-            for (name, player) in players {
-                let pos: Vec2 = player.position;
-                if overlaps(new_x,
-                            new_x + width as i32, 
-                            pos.x as i32,
-                            pos.x as i32 + PLAYER_WIDTH as i32)
-                    &&
-                    overlaps(new_y,
-                             new_y + height as i32, 
-                             pos.y as i32,
-                             pos.y as i32 + PLAYER_HEIGHT as i32) {
-                        return Collider::Player(name.to_string());
-                    }
-            }
-            Collider::NoCollision
-        },
-        None => Collider::NoCollision
+    if let Some(players) = players {
+        for (name, player) in players {
+            let pos: Vec2 = player.position;
+            if overlaps(new_x,
+                        new_x + width as i32, 
+                        pos.x as i32,
+                        pos.x as i32 + PLAYER_WIDTH as i32)
+                &&
+                overlaps(new_y,
+                         new_y + height as i32, 
+                         pos.y as i32,
+                         pos.y as i32 + PLAYER_HEIGHT as i32) {
+                    return Collider::Player(name.to_string());
+                }
+        }
     }
+    return Collider::NoCollision
 }
 
 fn overlaps(a1: i32, a2: i32, b1: i32, b2: i32) -> bool {

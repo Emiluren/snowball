@@ -65,14 +65,15 @@ fn main() {
                             let mut lobby = lobby_arc.lock().unwrap();
                             lobby.clients.remove(&con.username);
 
-                            // Stop game thread if it's running
-                            if let Some(channel) = &lobby.game_thread_channel {
-                                channel.send(()).unwrap();
-                            }
-
                             // Remove the lobby if the last player left
                             if lobby.clients.is_empty() {
                                 println!("The last person left {}. Removing that lobby", &con.lobby_name);
+
+                                // Stop game thread if it's running
+                                if let Some(channel) = &lobby.game_thread_channel {
+                                    channel.send(()).unwrap();
+                                }
+
                                 lobby_closer_transmitter.send(con.lobby_name.clone()).unwrap();
                             }
                             break;
@@ -195,9 +196,9 @@ fn handle_message(
                 });
 
                 lobby.game_thread_channel = Some(game_event_sender);
+                let player_names: Vec<String> = lobby.clients.keys().map(|s| s.to_string()).collect();
+                lobby.broadcast(&format!("start game:{}", player_names.join(" ")))
             }
-            let player_names: Vec<String> = lobby.clients.keys().map(|s| s.to_string()).collect();
-            lobby.broadcast(&format!("start game:{}", player_names.join(" ")))
         }
         "key down" => {
             match *message_content {

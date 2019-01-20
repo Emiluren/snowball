@@ -167,7 +167,7 @@ fn update_player(player: &mut Player, tile_map: &maploading::Map) {
 
         let new_pos_x = (pos.x + vel.x).round();
         let collider = level::can_move_to(level::PLAYER_WIDTH,
-                                          level::PLAYER_HEIGHT,
+                                          level::PLAYER_HEIGHT - 1,
                                           new_pos_x as i32, pos.y as i32,
                                           tile_map, &None);
         match collider {
