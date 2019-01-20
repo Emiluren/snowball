@@ -53,7 +53,7 @@ pub fn can_move_to(width: usize, height: usize, new_x: i32, new_y: i32,
                         pos.x as i32 + PLAYER_WIDTH as i32)
                 &&
                 overlaps(new_y,
-                         new_y + height as i32, 
+                         new_y + height as i32,
                          pos.y as i32,
                          pos.y as i32 + PLAYER_HEIGHT as i32) {
                     return Collider::Player(name.to_string());
