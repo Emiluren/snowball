@@ -1,4 +1,3 @@
-use crate::lobby::{Lobby, Client};
 use crate::entities::Player;
 use crate::vec2::*;
 use std::collections::HashMap;
@@ -15,14 +14,12 @@ pub enum Collider {
     NoCollision,
 }
 
-
 pub fn is_outside_screen(width: usize, height: usize, new_x: i32, new_y: i32,
                          tile_map: &maploading::Map) -> bool {
     new_x < 0 ||
     (new_x as usize) + width >= tile_map.width*TILE_SIZE ||
     (new_y as usize) + height >= tile_map.height*TILE_SIZE
 }
-
 
 pub fn can_move_to(width: usize, height: usize, new_x: i32, new_y: i32,
                    tile_map: &maploading::Map,
@@ -69,8 +66,6 @@ pub fn can_move_to(width: usize, height: usize, new_x: i32, new_y: i32,
     }
 }
 
-
 fn overlaps(a1: i32, a2: i32, b1: i32, b2: i32) -> bool {
     a1.max(b1) <= b2.min(a2)
 }
-

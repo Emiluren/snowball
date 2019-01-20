@@ -141,7 +141,6 @@ fn update_player(player: &mut Player, tile_map: &maploading::Map) {
                                           pos.x as i32, new_pos_y as i32,
                                           tile_map, &None);
         match collider {
-            
             level::Collider::NoCollision => {
                 player.velocity = Vec2{x: vel.x, y: vel.y + GRAVITY_ACCELERATION};
                 player.position = Vec2{x: pos.x, y: new_pos_y};
@@ -149,7 +148,7 @@ fn update_player(player: &mut Player, tile_map: &maploading::Map) {
                     player.on_ground = false;
                 }
             },
-            level::Collider::Tile(tx, ty) => {
+            level::Collider::Tile(_tx, ty) => {
                 if vel.y > 0. {
                     player.position = Vec2{x: pos.x,
                                            y: ty as f32 - level::PLAYER_HEIGHT as f32};
@@ -172,7 +171,6 @@ fn update_player(player: &mut Player, tile_map: &maploading::Map) {
                                           new_pos_x as i32, pos.y as i32,
                                           tile_map, &None);
         match collider {
-            
             level::Collider::NoCollision => {
                 let dx = -(player.left_pressed as i32) + player.right_pressed as i32;
                 let mut new_vx = vel.x * 0.9 + dx as f32;
@@ -181,11 +179,10 @@ fn update_player(player: &mut Player, tile_map: &maploading::Map) {
                 }
                 player.velocity = Vec2{x: new_vx, y: vel.y};
                 player.position = Vec2{x: (pos.x + vel.x).round(), y: pos.y};
-            },
-            level::Collider::Tile(tx, ty) => {
+            }
+            _ => {
                 player.velocity = Vec2{x: 0., y: vel.y}
-            },
-            _ => { }
+            }
         }
     }
 }
@@ -210,11 +207,11 @@ fn update_snowballs(lobby: &mut Lobby, tile_map: &maploading::Map) -> (Vec<Strin
 
     let mut player_hit = false;
     let mut ground_hit = false;
-    for (id, snowball) in &mut lobby.snowballs {
+    for (_id, snowball) in &mut lobby.snowballs {
         let new_vel = snowball.velocity + Vec2 {x: 0., y: GRAVITY_ACCELERATION};
         let new_pos = snowball.position + new_vel;
         snowball.velocity = snowball.velocity;
-        snowball.position = snowball.position;
+        snowball.position = new_pos;
     }
 
     let mut hits = vec!();

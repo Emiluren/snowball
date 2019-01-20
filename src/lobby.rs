@@ -27,7 +27,7 @@ impl Lobby {
 
     pub fn broadcast(&mut self, message: &str) {
         let message = ts::Message::Text(message.to_string());
-        for (client_name, client) in &mut self.clients {
+        for (_client_name, client) in &mut self.clients {
             client.websocket.write_message(message.clone()).unwrap();
         }
     }

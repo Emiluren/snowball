@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::vec;
 use serde_derive::Deserialize;
 use serde_json;
 use std::fs::File;
