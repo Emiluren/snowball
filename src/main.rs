@@ -196,6 +196,8 @@ fn handle_message(
 
                 lobby.game_thread_channel = Some(game_event_sender);
             }
+            let player_names: Vec<String> = lobby.clients.keys().map(|s| s.to_string()).collect();
+            lobby.broadcast(&format!("start_game:{}", player_names.join(" ")))
         }
         "key down" => {
             match *message_content {

@@ -14,7 +14,7 @@ use std::vec;
 use std::thread::sleep;
 use std::time::Duration;
 
-const MAP_FILE: &str = "../public/assets/map.json";
+const MAP_FILE: &str = "public/assets/map.json";
 
 const GRAVITY_ACCELERATION: f32 = 1.3;
 const PLAYER_MAX_SPEED: f32 = 10.;
