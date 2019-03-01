@@ -1,5 +1,4 @@
-use std::ops::Add;
-use std::ops::Sub;
+use std::ops::{Add, Mul, Sub};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vec2 {
@@ -29,14 +28,18 @@ impl Sub for Vec2 {
     }
 }
 
-impl Vec2 {
-    pub fn scale(self, scalar: f32) -> Self {
+impl Mul<f32> for Vec2 {
+    type Output = Vec2;
+
+    fn mul(self, scalar: f32) -> Self {
         Vec2 {
             x: self.x*scalar,
             y: self.y*scalar,
         }
     }
+}
 
+impl Vec2 {
     pub fn from_direction(angle: f32, length: f32) -> Self {
         Vec2 {
             x: angle.cos() * length,
@@ -64,6 +67,3 @@ impl Vec2 {
         self.distance_to(center_point) <= size
     }
 }
-
-
-

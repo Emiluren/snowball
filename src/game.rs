@@ -261,8 +261,8 @@ pub fn create_snowball(lobby: &mut Lobby, pos: Vec2, angle: f32, force: f32) {
     let direction = Vec2::from_direction(angle, 1.);
     let snowball = Snowball {
         id: create_snowball_id(lobby),
-        position: pos + direction.scale(SNOWBALL_SPAWN_DISTANCE),
-        velocity: direction.scale(force * MAX_THROWING_FORCE),
+        position: pos + direction * SNOWBALL_SPAWN_DISTANCE,
+        velocity: direction * force * MAX_THROWING_FORCE,
     };
     lobby.snowballs.insert(snowball.id, snowball);
 }
